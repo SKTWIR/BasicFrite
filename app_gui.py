@@ -3,21 +3,29 @@
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import font as tkFont
+import sys # Ajout de sys pour être complet
 
 # --- DÉFINITION DE LA CLASSE ---
 
 class UserProfile:
     """Une classe pour stocker et valider les informations d'un profil utilisateur."""
     
-    def __init__(self, first_name, last_name, age=None, weight=None, height=None):
+    # AJOUT DE L'ARGUMENT email
+    def __init__(self, first_name, last_name, email=None, age=None, weight=None, height=None):
         if not first_name or not last_name:
             raise ValueError("Le prénom et le nom ne peuvent pas être vides.")
         self.first_name = first_name
         self.last_name = last_name
 
+        # NOUVELLE VALIDATION : Email
+        if email is not None and ('@' not in str(email) or '.' not in str(email)):
+             raise ValueError("L'email doit être une adresse valide.")
+        self.email = email
+        
         if age is not None:
             if not isinstance(age, int) or age <= 0:
                 raise ValueError("L'âge doit être un nombre entier positif.")
+            # ... (Le reste des validations age, weight, height) ...
         self.age = age
 
         if weight is not None:
@@ -31,39 +39,40 @@ class UserProfile:
         self.height = height
 
 
-# --- VARIABLES GLOBALES (seront remplacées par des variables locales dans run_profile_screen) ---
-# Nécessaire pour submit_data, que nous devons rendre accessible localement.
+# --- VARIABLES GLOBALES ---
 entry_first_name = None
 entry_last_name = None
+entry_email = None # NOUVELLE VARIABLE GLOBALE POUR L'EMAIL
 entry_age = None
 entry_weight = None
 entry_height = None
-current_root = None # Pour stocker la référence à la fenêtre
+current_root = None 
 
 
 def submit_data(return_callback):
-    """
-    Récupère les données des champs, tente de créer un UserProfile.
-    Affiche un succès ou une erreur.
-    """
+    """Récupère les données des champs, y compris l'email, et met à jour le profil."""
+    global entry_email # S'assurer que l'email est accessible
+    
     try:
         # 1. Récupérer les données des champs
         first_name = entry_first_name.get()
         last_name = entry_last_name.get()
+        email = entry_email.get() # RÉCUPÉRATION DE L'EMAIL
         
-        # 2. Gérer les conversions de nombres (peut lever une ValueError)
+        # 2. Gérer les conversions de nombres
         age = int(entry_age.get()) if entry_age.get() else None
         weight = float(entry_weight.get()) if entry_weight.get() else None
         height = float(entry_height.get()) if entry_height.get() else None
 
-        # 3. Tenter de créer l'utilisateur
+        # 3. Tenter de créer l'utilisateur (déclenche la validation de l'email)
         user = UserProfile(
-            first_name=first_name, last_name=last_name, age=age, weight=weight, height=height
+            first_name=first_name, last_name=last_name, email=email, # PASSAGE DE L'EMAIL
+            age=age, weight=weight, height=height
         )
 
         # 4. Afficher un succès et revenir au menu
-        messagebox.showinfo("Succès", f"Profil de {user.first_name} mis à jour! Retour au menu.")
-        return_callback() # Retourne au menu principal après succès
+        messagebox.showinfo("Succès", f"Profil de {user.first_name} mis à jour! Email: {user.email}. Retour au menu.")
+        return_callback()
         
     except ValueError as e:
         # 5. Afficher une erreur
@@ -71,17 +80,13 @@ def submit_data(return_callback):
 
 
 def return_to_menu(callback):
-    """
-    Ferme cet écran et exécute la fonction de rappel (switch_to_menu).
-    """
+    """Ferme cet écran et exécute la fonction de rappel (switch_to_menu)."""
     callback()
 
 
 def run_profile_screen(root_window, switch_to_menu_callback):
-    """
-    Lance l'interface du profil utilisateur dans la fenêtre fournie.
-    """
-    global entry_first_name, entry_last_name, entry_age, entry_weight, entry_height, current_root
+    """Lance l'interface du profil utilisateur dans la fenêtre fournie."""
+    global entry_first_name, entry_last_name, entry_email, entry_age, entry_weight, entry_height, current_root
 
     # 1. Nettoyer l'écran précédent
     for widget in root_window.winfo_children():
@@ -89,9 +94,9 @@ def run_profile_screen(root_window, switch_to_menu_callback):
 
     # 2. Configuration de la fenêtre
     root_window.title("Profil Utilisateur")
-    root_window.geometry("550x450") # Augmentation de la taille pour l'affichage du profil
+    root_window.geometry("550x480") # TAILLE AJUSTÉE pour le nouvel champ
     root_window.resizable(False, False)
-    current_root = root_window # Stocker la référence
+    current_root = root_window 
 
     # --- Définition du style (THÈME BLEU) ---
     BG_COLOR = "#D6EAF8"
@@ -115,6 +120,7 @@ def run_profile_screen(root_window, switch_to_menu_callback):
     fields = {
         "Prénom": tk.StringVar(value="Jean"),
         "Nom": tk.StringVar(value="DUPONT"),
+        "Email": tk.StringVar(value="jean.dupont@fit.fr"), # AJOUT DU CHAMP EMAIL ICI
         "Âge": tk.StringVar(value="30"),
         "Poids (kg)": tk.StringVar(value="75.5"),
         "Taille (m)": tk.StringVar(value="1.78"),
@@ -133,6 +139,7 @@ def run_profile_screen(root_window, switch_to_menu_callback):
         # Stocker les champs
         if label_text == "Prénom": entry_first_name = entry
         elif label_text == "Nom": entry_last_name = entry
+        elif label_text == "Email": entry_email = entry # NOUVELLE LIAISON
         elif label_text == "Âge": entry_age = entry
         elif label_text == "Poids (kg)": entry_weight = entry
         elif label_text == "Taille (m)": entry_height = entry

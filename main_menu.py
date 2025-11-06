@@ -3,6 +3,8 @@
 import tkinter as tk
 from tkinter import messagebox
 import sys
+# La librairie 'os' n'est plus nécessaire dans cette version de main_menu.py
+# (Elle était utilisée dans l'ancienne version de run_us_15_screen)
 
 # Import des autres écrans
 import connection_initial 
@@ -10,13 +12,27 @@ import us_15
 import us_31        
 import app_gui      
 
-# --- Fonctions d'Action/Simulations (inchangées) ---
+# --- Fonctions d'Action/Simulations ---
 
 def show_user_info():
     messagebox.showinfo("ℹ️ Mon Profil", "Nom: DUPONT\nÂge: 30 ans\nPoids: 75 kg\nObjectif: Hypertrophie")
 
 def view_sessions():
     messagebox.showinfo("📅 Mes Séances", "Séances de la semaine :\nLundi: Upper\nMercredi: Lower\nVendredi: Full Body")
+
+# --- NOUVELLE FONCTION : Suppression de Compte ---
+
+def delete_account():
+    """Supprime le compte utilisateur (Simulé) après confirmation."""
+    # Utilisation de la variable globale 'root'
+    confirm = messagebox.askyesno(
+        "Suppression du compte",
+        "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est définitive et non réversible."
+    )
+    if confirm:
+        messagebox.showinfo("Compte supprimé", "Votre compte a été supprimé (simulation).")
+        root.destroy()
+        sys.exit() # Arrête l'application après la suppression
 
 # --- Fonctions de Navigation ---
 
@@ -34,17 +50,14 @@ def switch_to_profile():
     app_gui.run_profile_screen(root, switch_to_menu)
 
 def switch_to_admin_menu():
-    """
-    Lance l'interface Administrateur.
-    Cette fonction est le point d'entrée pour le bouton "Test Admin".
-    """
+    """Lance l'interface Administrateur."""
     run_admin_menu()
 
 def switch_to_menu():
     """Affiche l'écran du Menu Principal Utilisateur."""
     global root
     
-    root.geometry("450x420") # TAILLE AUGMENTÉE pour faire de la place au bouton Admin
+    root.geometry("450x450") # Augmentation de la taille pour le bouton de suppression
     root.resizable(False, False)
     
     for widget in root.winfo_children():
@@ -54,7 +67,7 @@ def switch_to_menu():
     BUTTON_BG = "#2980B9"
     BUTTON_FG = "#FFFFFF"
     FONT_BUTTON = ("Arial", 12, "bold")
-    TEXT_COLOR = "#17202A" # Définition de TEXT_COLOR
+    TEXT_COLOR = "#17202A" 
 
     root.configure(bg=BG_COLOR)
     
@@ -77,13 +90,24 @@ def switch_to_menu():
                         activebackground="#1F618D")
         btn.pack(pady=8)
         
+    # --- Bouton "Supprimer le compte" (ajouté dans le flux principal) ---
+    tk.Button(button_frame, 
+              text="🗑️ Supprimer mon compte", 
+              command=delete_account, 
+              font=FONT_BUTTON,
+              bg="#D35400", # Couleur orange/marron pour danger
+              fg=BUTTON_FG, 
+              width=25, 
+              height=1,
+              relief="flat").pack(pady=8)
+    
     challenge_button = tk.Button(root, text="⚡ Défi Finisher ⚡", font=("Arial", 12, "bold"),
         command=lambda: us_31.show_random_challenge(root), bg="#2ECC71", fg="#FFFFFF", relief="flat", padx=10, pady=5)
     challenge_button.pack(pady=10)
     
     # --- NOUVEAU BOUTON : Test Admin (Placé ici, distinctement) ---
     tk.Button(root, text="⚙️ Test Admin", command=switch_to_admin_menu, font=("Arial", 10),
-               bg="#CCCCCC", fg=TEXT_COLOR, relief="flat").pack(pady=(5, 15)) # Espacement ajusté
+               bg="#CCCCCC", fg=TEXT_COLOR, relief="flat").pack(pady=(5, 15)) 
                
     tk.Button(root, text="🚪 Déconnexion", command=switch_to_login, font=("Arial", 10),
                bg="#E74C3C", fg="#FFFFFF", relief="flat").pack(pady=5)
