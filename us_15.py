@@ -2,8 +2,7 @@
 
 import tkinter as tk
 from tkinter import messagebox
-# Nous ne pouvons plus importer app_gui car ce n'est pas le standard du menu.
-# Nous allons utiliser un callback pour le retour au menu.
+import sys # Ajout de sys pour le bloc de test
 
 # --- 🧠 Logique d'adaptation de la répartition des groupes musculaires ---
 
@@ -24,7 +23,8 @@ def obtenir_repartition_musculaire(nb_seances: int) -> list:
 
 # --- ⚙️ Fonctions de l'Interface Utilisateur (Tkinter) ---
 
-def run_planning_screen(root_window, switch_to_menu_callback):
+# --- CORRECTION 1 : Accepter 'user_data' en argument ---
+def run_planning_screen(root_window, switch_to_menu_callback, user_data):
     """
     Crée et affiche l'interface de planification en utilisant la fenêtre root_window.
     """
@@ -67,20 +67,17 @@ def run_planning_screen(root_window, switch_to_menu_callback):
             label_resultat.config(text="Veuillez entrer un nombre valide.")
 
     # --- Widgets ---
-
+    # ... (Les widgets Titre, Saisie, Entry, Calculer, Resultat restent inchangés) ...
     # 1. Titre
     label_titre = tk.Label(root_window, text="Planification Hebdomadaire", font=("Arial", 16, "bold"))
     label_titre.pack(pady=15)
-
     # 2. Demande de saisie
     label_saisie = tk.Label(root_window, text="Nombre de séances par semaine (1-6) :", font=("Arial", 10))
     label_saisie.pack()
-
     # 3. Champ de saisie
     entry_seances = tk.Entry(root_window, width=5, font=("Arial", 12))
     entry_seances.pack(pady=5)
-    entry_seances.insert(0, "4") # Valeur par défaut
-
+    entry_seances.insert(0, "4")
     # 4. Bouton de calcul/affichage
     bouton_calculer = tk.Button(root_window, 
                                text="Afficher la Répartition", 
@@ -88,7 +85,6 @@ def run_planning_screen(root_window, switch_to_menu_callback):
                                bg="#4CAF50", fg="white", 
                                font=("Arial", 11, "bold"))
     bouton_calculer.pack(pady=10)
-
     # 5. Zone d'affichage des résultats
     label_resultat = tk.Label(root_window, text="Cliquez sur 'Afficher la Répartition' pour commencer.", 
                               justify=tk.LEFT, 
@@ -96,10 +92,11 @@ def run_planning_screen(root_window, switch_to_menu_callback):
                               padx=10, pady=10)
     label_resultat.pack(pady=15)
 
-    # 6. Bouton de retour au menu
+
+    # --- CORRECTION 2 : Modifier la commande du bouton Retour ---
     bouton_menu = tk.Button(root_window, 
                            text="⬅️ Retour Menu Principal", 
-                           command=switch_to_menu_callback, # Utilise le callback fourni par le menu
+                           command=lambda: switch_to_menu_callback(user_data), # <-- Doit passer user_data
                            bg="#f0f0f0", 
                            font=("Arial", 10))
     bouton_menu.pack(pady=20)
@@ -107,10 +104,11 @@ def run_planning_screen(root_window, switch_to_menu_callback):
 
 # Si le fichier est exécuté seul (pour test)
 if __name__ == '__main__':
-    def dummy_menu_callback():
-        print("Retour au Menu!")
+    def dummy_menu_callback(data_recue): # <-- Doit accepter l'argument
+        print(f"Retour au Menu! Données: {data_recue}")
         sys.exit()
 
     root = tk.Tk()
-    run_planning_screen(root, dummy_menu_callback)
+    dummy_data = {'id_user': 'test'} # Données de test
+    run_planning_screen(root, dummy_menu_callback, dummy_data)
     root.mainloop()

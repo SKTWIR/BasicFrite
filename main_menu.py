@@ -3,8 +3,6 @@
 import tkinter as tk
 from tkinter import messagebox
 import sys
-# La librairie 'os' n'est plus nécessaire dans cette version de main_menu.py
-# (Elle était utilisée dans l'ancienne version de run_us_15_screen)
 
 # Import des autres écrans
 import connection_initial 
@@ -12,52 +10,69 @@ import us_15
 import us_31        
 import app_gui      
 
+# --- Variable Globale pour stocker l'utilisateur connecté ---
+current_user_data = None
+
 # --- Fonctions d'Action/Simulations ---
 
 def show_user_info():
-    messagebox.showinfo("ℹ️ Mon Profil", "Nom: DUPONT\nÂge: 30 ans\nPoids: 75 kg\nObjectif: Hypertrophie")
+    # Remplacé par switch_to_profile, mais gardé au cas où
+    if current_user_data:
+        messagebox.showinfo("ℹ️ Mon Profil", f"Nom: {current_user_data.get('nom')}\nEmail: {current_user_data.get('email')}")
+    else:
+        messagebox.showerror("Erreur", "Aucun utilisateur connecté.")
 
 def view_sessions():
     messagebox.showinfo("📅 Mes Séances", "Séances de la semaine :\nLundi: Upper\nMercredi: Lower\nVendredi: Full Body")
 
-# --- NOUVELLE FONCTION : Suppression de Compte ---
+# --- Fonction Suppression de Compte ---
 
 def delete_account():
-    """Supprime le compte utilisateur (Simulé) après confirmation."""
-    # Utilisation de la variable globale 'root'
-    confirm = messagebox.askyesno(
-        "Suppression du compte",
-        "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est définitive et non réversible."
-    )
+    # ... (Logique de suppression inchangée) ...
+    confirm = messagebox.askyesno("Suppression du compte", "Êtes-vous sûr de vouloir supprimer votre compte ? ...")
     if confirm:
         messagebox.showinfo("Compte supprimé", "Votre compte a été supprimé (simulation).")
         root.destroy()
-        sys.exit() # Arrête l'application après la suppression
+        sys.exit()
 
 # --- Fonctions de Navigation ---
 
 def switch_to_login():
     """Déconnexion : Ferme le menu et affiche l'écran de connexion/initial."""
+    global current_user_data
+    current_user_data = None # Réinitialiser l'utilisateur lors de la déconnexion
+    
     if messagebox.askyesno("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?"):
-        connection_initial.run_connection_initial(root, switch_to_menu)
+        connection_initial.run_connection_initial(root, switch_to_menu, switch_to_admin_menu)
+
+# Dans main_menu.py
 
 def switch_to_planning():
     """Lance l'écran de planification (us_15)."""
-    us_15.run_planning_screen(root, switch_to_menu)
+    # --- CORRECTION ---
+    # Nous devons passer les current_user_data à l'écran de planification
+    us_15.run_planning_screen(root, switch_to_menu, current_user_data)
 
 def switch_to_profile():
-    """Lance l'écran du profil utilisateur (app_gui)."""
-    app_gui.run_profile_screen(root, switch_to_menu)
+    """Lance l'écran du profil utilisateur (app_gui) AVEC les données."""
+    if current_user_data:
+        # ⚠️ APPEL VERS APP_GUI AVEC LES DONNÉES
+        app_gui.run_profile_screen(root, switch_to_menu, current_user_data)
+    else:
+        messagebox.showerror("Erreur", "Impossible de charger le profil. Données utilisateur non trouvées.")
 
-def switch_to_admin_menu():
+def switch_to_admin_menu(user_data): # <-- Accepte les données
     """Lance l'interface Administrateur."""
+    global current_user_data
+    current_user_data = user_data # Stocke les données
     run_admin_menu()
 
-def switch_to_menu():
+def switch_to_menu(user_data): # <-- Accepte les données
     """Affiche l'écran du Menu Principal Utilisateur."""
-    global root
+    global root, current_user_data
+    current_user_data = user_data # Stocke les données
     
-    root.geometry("450x450") # Augmentation de la taille pour le bouton de suppression
+    root.geometry("450x450") 
     root.resizable(False, False)
     
     for widget in root.winfo_children():
@@ -79,7 +94,7 @@ def switch_to_menu():
     
     # Boutons de Fonctionnalités Utilisateur
     boutons = [
-        ("ℹ️ Mon Profil", switch_to_profile), 
+        ("ℹ️ Mon Profil", switch_to_profile), # <-- Appelle la fonction qui passe les données
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
     ]
@@ -90,12 +105,11 @@ def switch_to_menu():
                         activebackground="#1F618D")
         btn.pack(pady=8)
         
-    # --- Bouton "Supprimer le compte" (ajouté dans le flux principal) ---
     tk.Button(button_frame, 
               text="🗑️ Supprimer mon compte", 
               command=delete_account, 
               font=FONT_BUTTON,
-              bg="#D35400", # Couleur orange/marron pour danger
+              bg="#D35400", 
               fg=BUTTON_FG, 
               width=25, 
               height=1,
@@ -105,12 +119,10 @@ def switch_to_menu():
         command=lambda: us_31.show_random_challenge(root), bg="#2ECC71", fg="#FFFFFF", relief="flat", padx=10, pady=5)
     challenge_button.pack(pady=10)
     
-    # --- NOUVEAU BOUTON : Test Admin (Placé ici, distinctement) ---
-    tk.Button(root, text="⚙️ Test Admin", command=switch_to_admin_menu, font=("Arial", 10),
-               bg="#CCCCCC", fg=TEXT_COLOR, relief="flat").pack(pady=(5, 15)) 
+    # Bouton "Test Admin" est supprimé
                
     tk.Button(root, text="🚪 Déconnexion", command=switch_to_login, font=("Arial", 10),
-               bg="#E74C3C", fg="#FFFFFF", relief="flat").pack(pady=5)
+               bg="#E74C3C", fg="#FFFFFF", relief="flat").pack(pady=20)
 
 
 def run_admin_menu():
@@ -150,10 +162,12 @@ def run_admin_menu():
                         activebackground="#4A5867")
         btn.pack(pady=8)
         
-    # Bouton de retour vers le Menu Principal Utilisateur
-    tk.Button(root, text="< Retour Menu Utilisateur", command=switch_to_menu, font=("Arial", 10),
+    # --- MODIFICATION ICI ---
+    # Le bouton appelle maintenant un lambda qui passe les données utilisateur
+    tk.Button(root, text="< Retour Menu Utilisateur", 
+               command=lambda: switch_to_menu(current_user_data), # <-- CORRECTION
+               font=("Arial", 10),
                bg="#AAAAAA", fg="#17202A", relief="flat").pack(pady=20)
-
 
 def run_app_start():
     """Fonction de démarrage : crée la fenêtre root et lance l'écran de connexion initial."""
@@ -161,7 +175,7 @@ def run_app_start():
     root = tk.Tk()
     
     # Démarrage sur l'écran de connexion/inscription
-    connection_initial.run_connection_initial(root, switch_to_menu)
+    connection_initial.run_connection_initial(root, switch_to_menu, switch_to_admin_menu)
     root.mainloop()
 
 if __name__ == '__main__':
