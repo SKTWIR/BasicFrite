@@ -1,10 +1,10 @@
 import tkinter as tk
 
 def main():
-    # Janela principal
+    # Janela principal de connexion
     root = tk.Tk()
     root.title("Connexion")
-    root.geometry("400x300")
+    root.geometry("400x320")
     root.resizable(False, False)
     root.configure(bg="#f4f4f4")
 
@@ -57,7 +57,7 @@ def main():
         mdp = entry_mdp.get()
         print(f"Tentative de connexion : {identifiant} / {mdp} (logique à implémenter)")
 
-    # Botão "Se connecter"
+    # Botão grande "Se connecter"
     btn_connect = tk.Button(
         frame,
         text="Se connecter",
@@ -75,10 +75,10 @@ def main():
     # ---------- INSCRIPTION (M'inscrire) ----------
 
     def open_inscription_window():
-        """Ouvre une nouvelle fenêtre pour créer un compte."""
+        """Ouvre une nouvelle fenêtre pour créer un compte (USER STORY 1)."""
         reg = tk.Toplevel(root)
         reg.title("Inscription")
-        reg.geometry("400x260")
+        reg.geometry("420x380")
         reg.resizable(False, False)
         reg.configure(bg="#f4f4f4")
 
@@ -94,47 +94,84 @@ def main():
         )
         lbl_reg_title.pack(pady=(0, 15))
 
-        # Nom
+        # 1 - Nom
         lbl_nom = tk.Label(frame_reg, text="Nom :", bg="#f4f4f4")
         lbl_nom.pack(anchor="w")
         entry_nom = tk.Entry(frame_reg)
-        entry_nom.pack(fill="x", pady=(0, 8))
+        entry_nom.pack(fill="x", pady=(0, 6))
 
-        # Prénom
+        # 2 - Prénom
         lbl_prenom = tk.Label(frame_reg, text="Prénom :", bg="#f4f4f4")
         lbl_prenom.pack(anchor="w")
         entry_prenom = tk.Entry(frame_reg)
-        entry_prenom.pack(fill="x", pady=(0, 8))
+        entry_prenom.pack(fill="x", pady=(0, 6))
 
-        # Mot de passe
+        # 3 - Nom d'utilisateur
+        lbl_username = tk.Label(frame_reg, text="Nom d'utilisateur :", bg="#f4f4f4")
+        lbl_username.pack(anchor="w")
+        entry_username = tk.Entry(frame_reg)
+        entry_username.pack(fill="x", pady=(0, 6))
+
+        # 4 - Âge
+        lbl_age = tk.Label(frame_reg, text="Âge :", bg="#f4f4f4")
+        lbl_age.pack(anchor="w")
+        entry_age = tk.Entry(frame_reg)
+        entry_age.pack(fill="x", pady=(0, 6))
+
+        # 5 - Poids (kg)
+        lbl_poids = tk.Label(frame_reg, text="Poids (kg) :", bg="#f4f4f4")
+        lbl_poids.pack(anchor="w")
+        entry_poids = tk.Entry(frame_reg)
+        entry_poids.pack(fill="x", pady=(0, 6))
+
+        # 6 - Taille (m)
+        lbl_taille = tk.Label(frame_reg, text="Taille (m) :", bg="#f4f4f4")
+        lbl_taille.pack(anchor="w")
+        entry_taille = tk.Entry(frame_reg)
+        entry_taille.pack(fill="x", pady=(0, 6))
+
+        # 7 - Mot de passe
         lbl_reg_mdp = tk.Label(frame_reg, text="Mot de passe :", bg="#f4f4f4")
         lbl_reg_mdp.pack(anchor="w")
         entry_reg_mdp = tk.Entry(frame_reg, show="*")
-        entry_reg_mdp.pack(fill="x", pady=(0, 12))
+        entry_reg_mdp.pack(fill="x", pady=(0, 10))
 
         # Função do botão "Créer le compte"
         def on_create_account():
             nom = entry_nom.get()
             prenom = entry_prenom.get()
+            username = entry_username.get()
+            age = entry_age.get()
+            poids = entry_poids.get()
+            taille = entry_taille.get()
             mdp = entry_reg_mdp.get()
-            print(f"Création de compte -> Nom: {nom}, Prénom: {prenom}, Mot de passe: {mdp} (logique à implémenter)")
-            # aqui depois vocês podem salvar no arquivo / base de données
 
+            print(
+                "Création de compte -> "
+                f"Nom: {nom}, Prénom: {prenom}, Nom d'utilisateur: {username}, "
+                f"Âge: {age}, Poids: {poids} kg, Taille: {taille} m, "
+                f"Mot de passe: {mdp} (logique à implémenter)"
+            )
+
+        # Botão "Créer le compte" (mesmo estilo do Se connecter)
         btn_create = tk.Button(
             frame_reg,
             text="Créer le compte",
             command=on_create_account,
-            font=("Segoe UI", 11, "bold"),
-            bg="#28a745",
+            font=("Segoe UI", 12, "bold"),
+            bg="#1E90FF",
             fg="white",
-            activebackground="#218838",
+            activebackground="#187bcd",
             activeforeground="white",
             relief="flat",
             height=2
         )
         btn_create.pack(fill="x", pady=(10, 0))
 
-    # Botão "M'inscrire"
+        # foco inicial
+        entry_nom.focus_set()
+
+    # Botão "M'inscrire" (abre tela de criação de conta)
     btn_inscrire = tk.Button(
         frame,
         text="M'inscrire",
