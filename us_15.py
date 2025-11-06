@@ -1,50 +1,120 @@
-# --- Définition du nombre de séances par semaine ---
+import tkinter as tk
+from tkinter import messagebox
 
-# Variable pour stocker le nombre de séances d'entraînement
-# La valeur par défaut est mise à 3 comme exemple.
-# Dans une vraie application, cette valeur serait saisie par l'utilisateur.
-nombre_seances_par_semaine = 3
+# --- 🧠 Logique d'adaptation de la répartition des groupes musculaires ---
 
-# ---  Logique d'adaptation de la répartition des groupes musculaires ---
-
-def obtenir_repartition_musculaire(nb_seances: int) -> dict:
+def obtenir_repartition_musculaire(nb_seances: int) -> list:
     """
-    Retourne la répartition des groupes musculaires par séance
-    en fonction du nombre total de séances hebdomadaires.
+    Retourne la liste des groupes musculaires/types de séances par jour
+    en fonction du nombre total de séances hebdomadaires (de 1 à 6).
     """
     
     # Dictionnaire de répartition prédéfinies
-    # Clé : Nombre de séances
-    # Valeur : Liste des groupes/types de séances par jour
     repartitions = {
         1: ["Full Body"],
-        2: ["Haut du Corps", "Bas du Corps"], # Upper/Lower
-        3: ["Full Body", "Upper", "Lower"], # OU Push/Pull/Legs (PPL) simplifé
-        4: ["Haut du Corps (Force)", "Bas du Corps", "Haut du Corps (Volume)", "Bas du Corps"], # Upper/Lower x2
-        5: ["Poussée (Pecs/Epaules/Triceps)", "Tirage (Dos/Biceps)", "Jambes", "Haut du Corps Léger", "Bas du Corps Léger"], # Split 5 jours
-        6: ["Poussée", "Tirage", "Jambes", "Poussée", "Tirage", "Jambes"], # Push/Pull/Legs (PPL) x2
+        2: ["Haut du Corps", "Bas du Corps"], 
+        3: ["Full Body", "Upper", "Lower"], 
+        4: ["Haut du Corps (Force)", "Bas du Corps", "Haut du Corps (Volume)", "Bas du Corps"], 
+        5: ["Poussée", "Tirage", "Jambes", "Haut du Corps Léger", "Bas du Corps Léger"], 
+        6: ["Poussée", "Tirage", "Jambes", "Poussée", "Tirage", "Jambes"], 
     }
     
-    # Récupération de la répartition, ou utilisation d'une valeur par défaut
-    # si le nombre de séances n'est pas géré (ou si l'utilisateur entre 0, >6, etc.)
-    return repartitions.get(nb_seances, ["Répartition Personnalisée / Non Gérée"])
+    # Retourne la répartition gérée, ou un message si le nombre n'est pas pris en charge
+    return repartitions.get(nb_seances, ["⚠️ Nombre de séances non géré (Max 6)"])
 
-# --- Utilisation dans le code ---
+# --- ⚙️ Fonctions de l'Interface Utilisateur (Tkinter) ---
 
-# Appel de la fonction pour obtenir le planning
-planning_semaine = obtenir_repartition_musculaire(nombre_seances_par_semaine)
+def afficher_repartition():
+    """
+    Récupère la saisie de l'utilisateur, calcule la répartition 
+    et met à jour l'affichage dans l'interface.
+    """
+    try:
+        # Récupère la valeur entrée et la convertit en entier
+        nb_seances_str = entry_seances.get()
+        if not nb_seances_str:
+            # Si le champ est vide
+            raise ValueError("Veuillez entrer un nombre.")
+            
+        nb_seances = int(nb_seances_str)
+        
+        if not 1 <= nb_seances <= 6:
+            # Gère les cas hors de la plage 1-6
+            messagebox.showwarning("Avertissement", "Veuillez entrer un nombre de séances entre 1 et 6.")
+            return
 
-print(f"👉 Nombre de séances par semaine entré : **{nombre_seances_par_semaine}**")
-print("---")
-print("🗓️ Répartition musculaire suggérée pour la semaine :")
+        # 1. Obtenir la liste des séances
+        planning_semaine = obtenir_repartition_musculaire(nb_seances)
 
-# Affichage du planning
-for i, seance in enumerate(planning_semaine):
-    print(f"Séance {i+1}: **{seance}**")
+        # 2. Construire la chaîne de caractères pour l'affichage
+        lignes_seances = ""
+        for i, seance in enumerate(planning_semaine):
+            lignes_seances += f"Séance {i+1}: {seance}\n"
 
-# ---
-# Exemple de ce que vous feriez dans l'application :
-# Le 'planning_semaine' (par exemple ['Full Body', 'Upper', 'Lower'])
-# sera ensuite utilisé pour charger les exercices correspondants
-# pour chaque jour d'entraînement.
-# ---
+        # 3. Mettre à jour le Label de résultat
+        resultat_text = f"**{nb_seances}** séances par semaine :\n\n{lignes_seances.strip()}"
+        label_resultat.config(text=resultat_text)
+        
+    except ValueError as e:
+        # Gère les erreurs de conversion (si l'utilisateur entre du texte, etc.)
+        messagebox.showerror("Erreur de Saisie", f"Saisie invalide : {e}")
+        label_resultat.config(text="Veuillez entrer un nombre valide.")
+
+def retour_menu():
+    """
+    Fonction appelée par le bouton 'Retour Menu'.
+    Dans une vraie application, elle chargerait l'écran principal.
+    """
+    # ⚠️ TODO: Insérer ici le code pour charger l'écran du menu principal
+    print("Action : Retour au Menu Principal (Fonctionnalité en attente de développement)")
+    messagebox.showinfo("Menu", "Retour au Menu Principal...\n(Cette fonction n'est pas encore développée dans ce module)")
+
+
+# --- 🖼️ Configuration de la Fenêtre Principale ---
+
+# Crée la fenêtre principale
+fenetre = tk.Tk()
+fenetre.title("🏋️ Planificateur de Séances")
+fenetre.geometry("400x400") # Taille de la fenêtre
+
+# --- Widgets ---
+
+# 1. Titre
+label_titre = tk.Label(fenetre, text="Planification Hebdomadaire", font=("Arial", 16, "bold"))
+label_titre.pack(pady=15)
+
+# 2. Demande de saisie
+label_saisie = tk.Label(fenetre, text="Nombre de séances par semaine (1-6) :", font=("Arial", 10))
+label_saisie.pack()
+
+# 3. Champ de saisie
+entry_seances = tk.Entry(fenetre, width=5, font=("Arial", 12))
+entry_seances.pack(pady=5)
+entry_seances.insert(0, "4") # Valeur par défaut
+
+# 4. Bouton de calcul/affichage
+bouton_calculer = tk.Button(fenetre, 
+                           text="Afficher la Répartition", 
+                           command=afficher_repartition, 
+                           bg="#4CAF50", fg="white", 
+                           font=("Arial", 11, "bold"))
+bouton_calculer.pack(pady=10)
+
+# 5. Zone d'affichage des résultats
+label_resultat = tk.Label(fenetre, text="Cliquez sur 'Afficher la Répartition' pour commencer.", 
+                           justify=tk.LEFT, 
+                           font=("Arial", 10), 
+                           padx=10, pady=10)
+label_resultat.pack(pady=15)
+
+# 6. Bouton de retour au menu
+bouton_menu = tk.Button(fenetre, 
+                        text="⬅️ Retour Menu Principal", 
+                        command=retour_menu, 
+                        bg="#f0f0f0", 
+                        font=("Arial", 10))
+bouton_menu.pack(pady=20)
+
+
+# 7. Lancement de la boucle principale de l'interface (nécessaire pour afficher la fenêtre)
+fenetre.mainloop()
