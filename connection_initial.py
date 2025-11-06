@@ -1,4 +1,4 @@
-# Fichier : connection_initial.py (Encodage UTF-8 Corrigé)
+# Fichier : connection_initial.py (Gestion complète de la connexion et de l'inscription CSV)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -24,15 +24,15 @@ USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
 
 def check_user(pseudo, password):
     """
-    Vérifie le pseudo/mdp.
+    Vérifie le pseudo/mdp (en texte clair).
     Retourne le DICTIONNAIRE (row) de l'utilisateur si la connexion réussit.
+    Retourne None si échec.
     """
     if not os.path.exists(USER_CSV_FILE):
         messagebox.showerror("Erreur Fichier", "Fichier User.csv introuvable.")
         return None
 
     try:
-        # --- CORRECTION ICI ---
         with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
@@ -49,7 +49,6 @@ def get_next_user_id():
     max_id = 0
     if not os.path.exists(USER_CSV_FILE): return 1 
     try:
-        # --- CORRECTION ICI ---
         with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
@@ -64,7 +63,6 @@ def does_user_exist(username, email):
     """Vérifie si le pseudo ou l'email existent déjà."""
     if not os.path.exists(USER_CSV_FILE): return False
     try:
-        # --- CORRECTION ICI ---
         with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
@@ -77,29 +75,37 @@ def does_user_exist(username, email):
 
 def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin_callback):
     
-    # ... (La plupart de la création de l'interface est inchangée) ...
+    # ... (Le début de la fonction reste inchangé :
+    # préparation fenêtre, frame, titre, identifiant, mdp...) ...
     
     # ------------------ PRÉPARATION DE LA FENÊTRE ------------------
     for widget in root_window.winfo_children():
         widget.destroy()
+
     root_window.title("Connexion")
     root_window.geometry("600x480") 
     root_window.resizable(False, False)
     root_window.configure(bg=BG_COLOR)
+
     frame = tk.Frame(root_window, bg=BG_COLOR)
     frame.pack(expand=True, fill="both", padx=40, pady=40)
+
     lbl_title = tk.Label(frame, text="🏋️ Connexion à votre espace", font=("Segoe UI", 16, "bold"), bg=BG_COLOR)
     lbl_title.pack(pady=(0, 25))
+
     lbl_identifiant = tk.Label(frame, text="Identifiant (pseudo) :", bg=BG_COLOR, font=("Segoe UI", 12))
     lbl_identifiant.pack(anchor="w")
     entry_identifiant = tk.Entry(frame, font=("Segoe UI", 11))
     entry_identifiant.pack(fill="x", pady=(0, 15))
+
     lbl_mdp = tk.Label(frame, text="Mot de passe :", bg=BG_COLOR, font=("Segoe UI", 12))
     lbl_mdp.pack(anchor="w")
     entry_mdp = tk.Entry(frame, show="*", font=("Segoe UI", 11))
     entry_mdp.pack(fill="x", pady=(0, 15))
+
     def on_forgot():
         us_2.run_password_recovery(root_window, lambda: run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin_callback))
+
     btn_forgot = tk.Button(frame, text="Mot de passe oublié ?", bd=0, fg=BTN_PRIMARY, bg=BG_COLOR, 
                            cursor="hand2", font=("Segoe UI", 10, "underline"), activebackground=BG_COLOR,
                            activeforeground=BTN_PRIMARY, command=on_forgot)
@@ -139,11 +145,14 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
     # ------------------ INSCRIPTION (open_inscription_window) ------------------
     
     def open_inscription_window():
+        """Ouvre une nouvelle fenêtre pour créer un compte (Toplevel)."""
         reg = tk.Toplevel(root_window) 
         reg.title("Inscription")
         reg.geometry("600x480")
         reg.resizable(False, False)
         reg.configure(bg=BG_COLOR)
+
+        # ---- Container avec Canvas + Scrollbar ----
         container = tk.Frame(reg, bg=BG_COLOR)
         container.pack(fill="both", expand=True)
         canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -153,13 +162,17 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
         canvas.pack(side="left", fill="both", expand=True)
         frame_reg = tk.Frame(canvas, bg=BG_COLOR)
         canvas.create_window((0, 0), window=frame_reg, anchor="nw")
+        
         def on_frame_configure(event): canvas.configure(scrollregion=canvas.bbox("all"))
         frame_reg.bind("<Configure>", on_frame_configure)
         def _on_mousewheel(event): canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         frame_reg.bind("<MouseWheel>", _on_mousewheel) 
         canvas.bind_all("<MouseWheel>", _on_mousewheel) 
+        
+        # ------------------ CAMPOS DE CRÉATION DE COMPTE ------------------
         lbl_reg_title = tk.Label(frame_reg, text="Créer un compte", font=("Segoe UI", 16, "bold"), bg=BG_COLOR)
         lbl_reg_title.pack(pady=(20, 20))
+
         fields_data = [
             ("Nom :", "nom", False), ("Prénom :", "prenom", False), ("Nom d'utilisateur :", "username", False), 
             ("Adresse Email :", "email", False), 
@@ -173,30 +186,49 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
             entry = tk.Entry(frame_reg, font=("Segoe UI", 11), show="*" if is_password else "")
             entry.pack(fill="x", padx=40, pady=(0, 8 if not is_password else 15))
             entries[key] = entry 
-
+            
         def on_create_account():
             data = {key: entry.get() for key, entry in entries.items()}
-            if not data['username'] or not data['email'] or not data['mdp'] or not data['nom'] or not data['prenom']:
+            
+            required_fields = ['nom', 'prenom', 'username', 'email', 'mdp']
+            if not all(data[f] for f in required_fields):
                 messagebox.showerror("Champs requis", "Nom, Prénom, Pseudo, Email et Mot de passe sont requis.", parent=reg)
                 return
+                
+            if '@' not in data['email'] or '.' not in data['email']:
+                 messagebox.showerror("Email invalide", "Veuillez entrer une adresse email valide.", parent=reg)
+                 return
+                 
             if does_user_exist(data['username'], data['email']):
                 messagebox.showerror("Erreur", "Ce nom d'utilisateur ou cet email est déjà utilisé.", parent=reg)
                 return
+
             try:
                 new_id = get_next_user_id()
+                
+                # --- MODIFICATION ICI ---
                 new_row = [
-                    new_id, data['username'], data['nom'], data['prenom'],
-                    data['age'] if data['age'] else '',
+                    new_id,
+                    data['username'],
+                    data['nom'],
+                    data['prenom'], 
+                    data['age'] if data['age'] else '', 
                     data['poids'] if data['poids'] else '',
                     data['taille'] if data['taille'] else '',
-                    data['mdp'], data['email'], 'False', 'active' 
+                    data['mdp'], 
+                    data['email'],
+                    'False', # is_admin (par défaut)
+                    '' # <-- Statut laissé vide
                 ]
-                # --- CORRECTION ICI ---
+                # --- FIN DE LA MODIFICATION ---
+
                 with open(USER_CSV_FILE, mode='a', newline='', encoding='utf-8') as f:
                     csv_writer = csv.writer(f, delimiter=';')
                     csv_writer.writerow(new_row)
+                    
                 messagebox.showinfo("Succès", "Compte créé! Veuillez vous connecter.", parent=reg)
                 reg.destroy()
+
             except Exception as e:
                 messagebox.showerror("Erreur d'écriture", f"Impossible d'enregistrer le compte: {e}", parent=reg)
 
@@ -205,16 +237,22 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
                                 activebackground=BTN_PRIMARY_ACTIVE, activeforeground="white", 
                                 relief="flat", height=2)
         btn_create.pack(fill="x", padx=40, pady=(10, 30))
+
         entries["nom"].focus_set()
+        
         reg.grab_set()
         root_window.wait_window(reg)
 
+
+    # Botão "M'inscrire" (sous le lien support)
     btn_inscrire = tk.Button(frame, text="M'inscrire", command=open_inscription_window,
                              font=("Segoe UI", 11, "bold"), bg="#ffffff", fg=BTN_PRIMARY, 
                              activebackground="#e6e6e6", activeforeground=BTN_PRIMARY, 
                              relief="groove", height=1)
     btn_inscrire.pack(pady=(5, 5))
+
     entry_identifiant.focus_set()
+
 
 if __name__ == "__main__":
     def dummy_menu_callback(user_data):
