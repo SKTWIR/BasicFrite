@@ -1,14 +1,17 @@
-# Fichier : connection_initial.py (Contient Connexion, Inscription, et lien vers Récupération)
+# Fichier : connection_initial.py (Contient Connexion, Inscription, et lien vers Récupération/Support)
 
 import tkinter as tk
 from tkinter import messagebox
 import sys
 import us_2 # Module de récupération de mot de passe
+import support_contact # Module de support
 
-# Définitions de style
+# Définitions de style (TEXT_COLOR corrigé)
 BG_COLOR = "#f4f4f4"
 BTN_PRIMARY = "#1E90FF"
 BTN_PRIMARY_ACTIVE = "#187bcd"
+TEXT_COLOR = "#17202A" # <-- Correction de la variable manquante
+LINK_FG = "#2980B9"
 
 def run_connection_initial(root_window, switch_to_menu_callback):
     """
@@ -16,7 +19,6 @@ def run_connection_initial(root_window, switch_to_menu_callback):
     """
     
     # ------------------ PRÉPARATION DE LA FENÊTRE ------------------
-    # Nettoyer l'écran précédent
     for widget in root_window.winfo_children():
         widget.destroy()
 
@@ -45,7 +47,7 @@ def run_connection_initial(root_window, switch_to_menu_callback):
     entry_mdp = tk.Entry(frame, show="*", font=("Segoe UI", 11))
     entry_mdp.pack(fill="x", pady=(0, 15))
 
-    # Fonction "Mot de passe oublié ?" (MODIFIÉE)
+    # Fonction "Mot de passe oublié ?" (MODIFIÉE pour lancer us_2)
     def on_forgot():
         """Lance l'écran de récupération de mot de passe (us_2.py)."""
         us_2.run_password_recovery(root_window, lambda: run_connection_initial(root_window, switch_to_menu_callback))
@@ -74,18 +76,34 @@ def run_connection_initial(root_window, switch_to_menu_callback):
                             activebackground=BTN_PRIMARY_ACTIVE, activeforeground="white", 
                             relief="flat", height=2)
     btn_connect.pack(fill="x", pady=(0, 12))
-
+    
+    # ------------------ LIEN CONTACER LE SUPPORT ------------------
+    support_button = tk.Button(
+        frame,
+        text="Contacter le support",
+        command=lambda: support_contact.open_support_popup(root_window),
+        font=("Segoe UI", 10, "underline"),
+        fg=LINK_FG,
+        bg=BG_COLOR,
+        relief="flat",
+        borderwidth=0,
+        cursor="hand2",
+        activeforeground=TEXT_COLOR, # <-- Utilisation de TEXT_COLOR (maintenant défini)
+        activebackground=BG_COLOR
+    )
+    support_button.pack(anchor="center", pady=(5, 5))
+    
     # ------------------ INSCRIPTION (open_inscription_window) ------------------
 
     def open_inscription_window():
-        """Ouvre une nouvelle fenêtre pour créer un compte (USER STORY 1)."""
+        """Ouvre une nouvelle fenêtre pour créer un compte (Toplevel)."""
         reg = tk.Toplevel(root_window) 
         reg.title("Inscription")
         reg.geometry("600x480")
         reg.resizable(False, False)
         reg.configure(bg=BG_COLOR)
 
-        # ---- Container avec Canvas + Scrollbar (Conservé) ----
+        # ---- Container avec Canvas + Scrollbar ----
         container = tk.Frame(reg, bg=BG_COLOR)
         container.pack(fill="both", expand=True)
 
@@ -96,74 +114,44 @@ def run_connection_initial(root_window, switch_to_menu_callback):
         canvas.pack(side="left", fill="both", expand=True)
         frame_reg = tk.Frame(canvas, bg=BG_COLOR)
         canvas.create_window((0, 0), window=frame_reg, anchor="nw")
+        
         def on_frame_configure(event):
             canvas.configure(scrollregion=canvas.bbox("all"))
         frame_reg.bind("<Configure>", on_frame_configure)
+        
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         frame_reg.bind("<MouseWheel>", _on_mousewheel) 
         canvas.bind_all("<MouseWheel>", _on_mousewheel) 
         
-        # ------------------ CAMPOS DA CRIAÇÃO DE CONTA ------------------
+        # ------------------ CAMPOS DE CRÉATION DE COMPTE ------------------
         lbl_reg_title = tk.Label(frame_reg, text="Créer un compte", font=("Segoe UI", 16, "bold"), bg=BG_COLOR)
         lbl_reg_title.pack(pady=(20, 20))
 
-        # 1 - Nom
-        lbl_nom = tk.Label(frame_reg, text="Nom :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_nom.pack(anchor="w", padx=40)
-        entry_nom = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_nom.pack(fill="x", padx=40, pady=(0, 8))
+        # Définition des champs et des variables d'entrée
+        fields_data = [
+            ("Nom :", False), ("Prénom :", False), ("Nom d'utilisateur :", False), 
+            ("Adresse Email :", False), # <-- Email inclus ici
+            ("Âge :", False), ("Poids (kg) :", False), ("Taille (m) :", False), 
+            ("Mot de passe :", True)
+        ]
+        entries = {}
+        for text, is_password in fields_data:
+            lbl = tk.Label(frame_reg, text=text, bg=BG_COLOR, font=("Segoe UI", 12))
+            lbl.pack(anchor="w", padx=40)
+            entry = tk.Entry(frame_reg, font=("Segoe UI", 11), show="*" if is_password else "")
+            entry.pack(fill="x", padx=40, pady=(0, 8 if not is_password else 15))
+            entries[text] = entry 
 
-        # 2 - Prénom
-        lbl_prenom = tk.Label(frame_reg, text="Prénom :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_prenom.pack(anchor="w", padx=40)
-        entry_prenom = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_prenom.pack(fill="x", padx=40, pady=(0, 8))
 
-        # 3 - Nom d'utilisateur
-        lbl_username = tk.Label(frame_reg, text="Nom d'utilisateur :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_username.pack(anchor="w", padx=40)
-        entry_username = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_username.pack(fill="x", padx=40, pady=(0, 8))
-        
-        # 4 - ADRESSE EMAIL (NOUVEAU CHAMP)
-        lbl_email = tk.Label(frame_reg, text="Adresse Email :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_email.pack(anchor="w", padx=40)
-        entry_email_reg = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_email_reg.pack(fill="x", padx=40, pady=(0, 8))
-
-        # 5 - Âge
-        lbl_age = tk.Label(frame_reg, text="Âge :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_age.pack(anchor="w", padx=40)
-        entry_age = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_age.pack(fill="x", padx=40, pady=(0, 8))
-
-        # 6 - Poids (kg)
-        lbl_poids = tk.Label(frame_reg, text="Poids (kg) :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_poids.pack(anchor="w", padx=40)
-        entry_poids = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_poids.pack(fill="x", padx=40, pady=(0, 8))
-
-        # 7 - Taille (m)
-        lbl_taille = tk.Label(frame_reg, text="Taille (m) :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_taille.pack(anchor="w", padx=40)
-        entry_taille = tk.Entry(frame_reg, font=("Segoe UI", 11))
-        entry_taille.pack(fill="x", padx=40, pady=(0, 8))
-
-        # 8 - Mot de passe
-        lbl_reg_mdp = tk.Label(frame_reg, text="Mot de passe :", bg=BG_COLOR, font=("Segoe UI", 12))
-        lbl_reg_mdp.pack(anchor="w", padx=40)
-        entry_reg_mdp = tk.Entry(frame_reg, show="*", font=("Segoe UI", 11))
-        entry_reg_mdp.pack(fill="x", padx=40, pady=(0, 15))
-
-        # Função do botão "Créer le compte"
+        # Fonction du bouton "Créer le compte"
         def on_create_account():
-            nom = entry_nom.get()
-            prenom = entry_prenom.get()
-            email = entry_email_reg.get() # Récupération de l'email
-            # ... (validation)
+            # Récupération simplifiée
+            nom = entries["Nom :"].get()
+            email = entries["Adresse Email :"].get()
+            mdp = entries["Mot de passe :"].get()
             
-            if nom and prenom and entry_reg_mdp.get() and email: # Ajout de la condition 'email'
+            if nom and mdp and email:
                  messagebox.showinfo("Succès", "Compte créé! Veuillez vous connecter.")
                  reg.destroy()
 
@@ -173,18 +161,18 @@ def run_connection_initial(root_window, switch_to_menu_callback):
                                 relief="flat", height=2)
         btn_create.pack(fill="x", padx=40, pady=(10, 30))
 
-        entry_nom.focus_set()
+        entries["Nom :"].focus_set()
         
         reg.grab_set()
         root_window.wait_window(reg)
 
 
-    # Botão "M'inscrire"
+    # Botão "M'inscrire" (sous le lien support)
     btn_inscrire = tk.Button(frame, text="M'inscrire", command=open_inscription_window,
                              font=("Segoe UI", 11, "bold"), bg="#ffffff", fg=BTN_PRIMARY, 
                              activebackground="#e6e6e6", activeforeground=BTN_PRIMARY, 
                              relief="groove", height=1)
-    btn_inscrire.pack(pady=(0, 5))
+    btn_inscrire.pack(pady=(5, 5))
 
     entry_identifiant.focus_set()
 
