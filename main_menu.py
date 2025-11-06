@@ -5,17 +5,26 @@ from tkinter import messagebox
 import sys
 
 # Import des autres écrans
-import login_screen # <-- Votre écran de connexion
-import us_15        # <-- Votre écran de planification
-import us_31        # <-- Le module de défis
-import app_gui      # <-- NOUVEL IMPORT : Le module du profil utilisateur
+import connection_initial # <-- NOUVEL IMPORT/RENOMMAGE : L'écran de connexion/inscription
+import us_15        
+import us_31        
+import app_gui      
+
+# --- Fonctions d'Action/Simulations (inchangées) ---
+
+def show_user_info():
+    messagebox.showinfo("ℹ️ Mon Profil", "Nom: DUPONT\nÂge: 30 ans\nPoids: 75 kg\nObjectif: Hypertrophie")
+
+def view_sessions():
+    messagebox.showinfo("📅 Mes Séances", "Séances de la semaine :\nLundi: Upper\nMercredi: Lower\nVendredi: Full Body")
 
 # --- Fonctions de Navigation ---
 
 def switch_to_login():
-    """Déconnexion : Ferme le menu et affiche l'écran de connexion."""
+    """Déconnexion : Ferme le menu et affiche l'écran de connexion/initial."""
     if messagebox.askyesno("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?"):
-        login_screen.run_login_screen(root, switch_to_menu)
+        # ⚠️ APPEL VERS CONNECTION_INITIAL
+        connection_initial.run_connection_initial(root, switch_to_menu)
 
 def switch_to_planning():
     """Lance l'écran de planification (us_15)."""
@@ -23,17 +32,16 @@ def switch_to_planning():
 
 def switch_to_profile():
     """Lance l'écran du profil utilisateur (app_gui)."""
-    # ⚠️ APPEL VERS APP_GUI
     app_gui.run_profile_screen(root, switch_to_menu)
 
 def switch_to_menu():
     """Affiche l'écran du Menu Principal."""
+    # ... (Le code de switch_to_menu reste inchangé, car il affiche le menu) ...
     global root
     
     root.geometry("450x350")
     root.resizable(False, False)
     
-    # Nettoyer l'écran précédent
     for widget in root.winfo_children():
         widget.destroy()
 
@@ -44,18 +52,15 @@ def switch_to_menu():
     
     root.configure(bg=BG_COLOR)
     
-    # Titre
     tk.Label(root, text="💪 Menu Principal", font=("Arial", 20, "bold"), 
              bg=BG_COLOR, fg="#2C3E50").pack(pady=20)
     
-    # --- Cadre pour les boutons de navigation (séparé du bouton Défi) ---
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
     
-    # Boutons de Fonctionnalités
     boutons = [
-        ("ℹ️ Mon Profil", switch_to_profile), # <-- MODIFIÉ pour appeler l'écran du profil
-        ("📅 Voir Mes Séances", lambda: messagebox.showinfo("Sessions", "Fonctionnalité non implémentée, utilisez 'Modifier Jours/Semaine'.")),
+        ("ℹ️ Mon Profil", switch_to_profile), 
+        ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
     ]
     
@@ -65,32 +70,21 @@ def switch_to_menu():
                         activebackground="#1F618D")
         btn.pack(pady=8)
         
-    # --- Bouton Défi ---
-    challenge_button = tk.Button(
-        root,
-        text="⚡ Défi Finisher ⚡",
-        font=("Arial", 12, "bold"),
-        command=lambda: us_31.show_random_challenge(root),
-        bg="#2ECC71",
-        fg="#FFFFFF",
-        relief="flat",
-        padx=10,
-        pady=5
-    )
+    challenge_button = tk.Button(root, text="⚡ Défi Finisher ⚡", font=("Arial", 12, "bold"),
+        command=lambda: us_31.show_random_challenge(root), bg="#2ECC71", fg="#FFFFFF", relief="flat", padx=10, pady=5)
     challenge_button.pack(pady=10)
     
-    # Bouton Déconnexion (Dernier élément)
     tk.Button(root, text="🚪 Déconnexion", command=switch_to_login, font=("Arial", 10),
                bg="#E74C3C", fg="#FFFFFF", relief="flat").pack(pady=20)
 
 
 def run_app_start():
-    """Fonction de démarrage : crée la fenêtre root et lance l'écran de connexion."""
+    """Fonction de démarrage : crée la fenêtre root et lance l'écran de connexion initial."""
     global root
     root = tk.Tk()
     
-    # Démarrage sur l'écran de connexion
-    login_screen.run_login_screen(root, switch_to_menu)
+    # ⚠️ Démarrage sur l'écran de connexion/inscription
+    connection_initial.run_connection_initial(root, switch_to_menu)
     root.mainloop()
 
 if __name__ == '__main__':
