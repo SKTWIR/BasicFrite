@@ -118,3 +118,5 @@ bouton_menu.pack(pady=20)
 
 # 7. Lancement de la boucle principale de l'interface (nécessaire pour afficher la fenêtre)
 fenetre.mainloop()
+
+#nom de la variable avec le resultat : resultat_text
