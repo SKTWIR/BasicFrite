@@ -25,8 +25,15 @@ def run_us_15_screen(root_window):
 
 def show_user_info():
     """Affiche les informations du profil utilisateur (Simulé)."""
-    info_user = "Nom: DUPONT\nÂge: 30 ans\nPoids: 75 kg\nObjectif: Hypertrophie"
+    info_user = (
+        "Nom: DUPONT\n"
+        "Email: dupont@example.com\n"
+        "Âge: 30 ans\n"
+        "Poids: 75 kg\n"
+        "Objectif: Hypertrophie"
+    )
     messagebox.showinfo("ℹ️ Mon Profil", info_user)
+
 
 def view_sessions():
     """Affiche un résumé des séances actuelles (Simulé)."""
@@ -37,6 +44,18 @@ def logout(root_window):
     if messagebox.askyesno("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?"):
         root_window.destroy()
         sys.exit() # Ferme le processus Python
+
+def delete_account(root_window):
+    """Supprime le compte utilisateur (Simulé) après confirmation."""
+    confirm = messagebox.askyesno(
+        "Suppression du compte",
+        "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est définitive."
+    )
+    if confirm:
+        messagebox.showinfo("Compte supprimé", "Votre compte a été supprimé (simulation).")
+        root_window.destroy()
+        sys.exit()
+
 
 def run_main_menu():
     """Crée et affiche la fenêtre du Menu Principal."""
@@ -68,7 +87,9 @@ def run_main_menu():
         ("ℹ️ Mon Profil", show_user_info),
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", lambda: run_us_15_screen(menu_root)), 
+        ("🗑️ Supprimer mon compte", lambda: delete_account(menu_root)),  # 👈 NOVO
     ]
+
     
     for text, command in boutons:
         btn = tk.Button(button_frame, 
