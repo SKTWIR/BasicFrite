@@ -109,7 +109,7 @@ label_resultat.pack(pady=15)
 
 # 6. Bouton de retour au menu
 bouton_menu = tk.Button(fenetre, 
-                        text="⬅️ Retour Menu Principal", 
+                        text="⬅️ Mes informations personnelles", 
                         command=retour_menu, 
                         bg="#f0f0f0", 
                         font=("Arial", 10))
