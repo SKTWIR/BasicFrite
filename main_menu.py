@@ -6,7 +6,8 @@ import sys
 
 # Import des autres écrans
 import login_screen # <-- Votre écran de connexion (doit exister)
-import us_15        # <-- Votre écran de planification
+import us_15        # <-- Votre écran de planification (doit exister)
+import us_31        # <-- NOUVEL IMPORT : Le module de défis
 
 # --- Fonctions d'Action (simulées) ---
 
@@ -26,7 +27,7 @@ def switch_to_login():
 
 def switch_to_planning():
     """Lance l'écran de planification (us_15)."""
-    # ⚠️ APPEL VERS US_15, en lui passant la fenêtre root et la fonction de retour
+    # ⚠️ APPEL VERS US_15
     us_15.run_planning_screen(root, switch_to_menu)
 
 def switch_to_menu():
@@ -51,6 +52,7 @@ def switch_to_menu():
     tk.Label(root, text="💪 Menu Principal", font=("Arial", 20, "bold"), 
              bg=BG_COLOR, fg="#2C3E50").pack(pady=20)
     
+    # --- Cadre pour les boutons de navigation (séparé du bouton Défi) ---
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
     
@@ -58,7 +60,7 @@ def switch_to_menu():
     boutons = [
         ("ℹ️ Mon Profil", show_user_info),
         ("📅 Voir Mes Séances", view_sessions),
-        ("🗓️ Modifier Jours/Semaine", switch_to_planning), # <-- Bouton modifié
+        ("🗓️ Modifier Jours/Semaine", switch_to_planning),
     ]
     
     for text, command in boutons:
@@ -67,7 +69,21 @@ def switch_to_menu():
                         activebackground="#1F618D")
         btn.pack(pady=8)
         
-    # Bouton Déconnexion (Appelle switch_to_login)
+    # --- NOUVEAU BOUTON : Défi (Placement en bas) ---
+    challenge_button = tk.Button(
+        root,
+        text="⚡ Défi Finisher ⚡",
+        font=("Arial", 12, "bold"),
+        command=lambda: us_31.show_random_challenge(root), # <-- Appel à us_31
+        bg="#2ECC71", # Vert
+        fg="#FFFFFF", # Blanc
+        relief="flat",
+        padx=10,
+        pady=5
+    )
+    challenge_button.pack(pady=10)
+    
+    # Bouton Déconnexion (Dernier élément)
     tk.Button(root, text="🚪 Déconnexion", command=switch_to_login, font=("Arial", 10),
                bg="#E74C3C", fg="#FFFFFF", relief="flat").pack(pady=20)
 
