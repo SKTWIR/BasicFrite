@@ -7,6 +7,7 @@ import os
 import json
 import tkinter as tk
 from tkinter import messagebox
+import csv
 
 # Simple JSON-backed storage (file in the project folder)
 DATA_FILE = os.path.join(os.path.dirname(__file__), "users_data.json")
@@ -18,6 +19,41 @@ SAMPLE_USERS = [
     {"username": "charlie", "email": "charlie@example.com", "status": "active"},
 ]
 
+CSV_FILE = os.path.join(os.path.dirname(__file__), "User.csv")
+CSV_FIELDS = [
+    "id_user", "pseudo", "nom", "prénom", "age", "poids", "taille", "motdepasse", "email", "is_admin", "statut"
+]
+
+def load_users_csv():
+    users = []
+    try:
+        with open(CSV_FILE, newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                users.append(row)
+        return users
+    except UnicodeDecodeError:
+        # Fallback for Windows/Excel CSV with accents
+        with open(CSV_FILE, newline='', encoding='latin-1') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                users.append(row)
+        return users
+
+def save_users_csv(users):
+    try:
+        with open(CSV_FILE, 'w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, delimiter=';')
+            writer.writeheader()
+            for u in users:
+                writer.writerow(u)
+    except Exception:
+        # Fallback
+        with open(CSV_FILE, 'w', newline='', encoding='latin-1') as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, delimiter=';')
+            writer.writeheader()
+            for u in users:
+                writer.writerow(u)
 
 def load_users():
     if not os.path.exists(DATA_FILE):
@@ -51,7 +87,7 @@ def run_user_management(root_window, switch_back_callback):
     root_window.geometry("650x450")
     root_window.resizable(False, False)
 
-    users = load_users()
+    users = load_users_csv()
 
     # --- Layout ---
     top_frame = tk.Frame(root_window)
@@ -64,14 +100,14 @@ def run_user_management(root_window, switch_back_callback):
     def refresh_list(filtered=None):
         listbox_users.delete(0, 'end')
         for u in (filtered if filtered is not None else users):
-            listbox_users.insert('end', f"{u['username']}  —  {u['email']}  [{u['status']}]")
+            listbox_users.insert('end', f"{u['pseudo']}  —  {u['email']}  [statut: {u['statut'] or 'actif'}]")
 
     def do_search():
         q = entry_search.get().strip().lower()
         if not q:
             refresh_list()
             return
-        filtered = [u for u in users if q in u['username'].lower() or q in u['email'].lower()]
+        filtered = [u for u in users if q in (u['pseudo'] or '').lower() or q in (u['email'] or '').lower()]
         refresh_list(filtered)
 
     tk.Button(top_frame, text="🔎 Chercher", command=do_search).pack(side="left", padx=(0, 6))
@@ -100,9 +136,9 @@ def run_user_management(root_window, switch_back_callback):
     def get_user_by_list_index(idx):
         # listbox may be filtered, reconstruct username from listbox text
         text = listbox_users.get(idx)
-        username = text.split()[0]
+        pseudo = text.split()[0]
         for u in users:
-            if u['username'] == username:
+            if u['pseudo'] == pseudo:
                 return u
         return None
 
@@ -115,7 +151,7 @@ def run_user_management(root_window, switch_back_callback):
         if not u:
             lbl_details.config(text="Utilisateur introuvable.")
             return
-        lbl_details.config(text=f"Nom d'utilisateur: {u['username']}\nEmail: {u['email']}\nStatut: {u['status']}")
+        lbl_details.config(text=f"Pseudo: {u['pseudo']}\nNom: {u['nom']}\nPrénom: {u['prénom']}\nEmail: {u['email']}\nStatut: {u['statut'] or 'actif'}\nAdmin: {u['is_admin']}")
 
     listbox_users.bind('<<ListboxSelect>>', on_select)
 
@@ -129,13 +165,13 @@ def run_user_management(root_window, switch_back_callback):
         if not u:
             messagebox.showerror("Erreur", "Utilisateur introuvable.")
             return
-        if u['status'] == 'blocked':
-            if messagebox.askyesno("Débloquer", f"Débloquer {u['username']} ?"):
-                u['status'] = 'active'
+        if (u['statut'] or '').lower() == 'bloqué':
+            if messagebox.askyesno("Débloquer", f"Débloquer {u['pseudo']} ?"):
+                u['statut'] = ''
         else:
-            if messagebox.askyesno("Bloquer", f"Bloquer {u['username']} ?"):
-                u['status'] = 'blocked'
-        save_users(users)
+            if messagebox.askyesno("Bloquer", f"Bloquer {u['pseudo']} ?"):
+                u['statut'] = 'bloqué'
+        save_users_csv(users)
         refresh_list()
         on_select()
 
@@ -148,9 +184,9 @@ def run_user_management(root_window, switch_back_callback):
         if not u:
             messagebox.showerror("Erreur", "Utilisateur introuvable.")
             return
-        if messagebox.askyesno("Supprimer", f"Supprimer définitivement {u['username']} ?"):
+        if messagebox.askyesno("Supprimer", f"Supprimer définitivement {u['pseudo']} ?"):
             users.remove(u)
-            save_users(users)
+            save_users_csv(users)
             refresh_list()
             lbl_details.config(text="Utilisateur supprimé.")
 
