@@ -136,7 +136,7 @@ for label_text, var in fields.items():
     entry.grid(row=row_index, column=1, padx=10, pady=8)
     
     # Stocker les champs par leur nom
-    if label_text == "Prénom": entries["first_name"] = entry
+    if label_text == "Prenom": entries["first_name"] = entry
     if label_text == "Nom": entries["last_name"] = entry
     if label_text == "Âge": entries["age"] = entry
     if label_text == "Poids (kg)": entries["weight"] = entry
