@@ -1,135 +1,83 @@
-# login.py
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
 
-# Exemplo: credenciais válidas para validação (apenas demo).
-# Em aplicação real, verifique contra base de dados / API / hash seguro.
-VALID_CREDENTIALS = {
-    "carol": "senha123",
-    "user1": "motdepasse"
-}
-
-
-def validate_credentials(user_id: str, password: str) -> bool:
-    """
-    Valida credenciais com a tabela de exemplo.
-    Retorna True se válidas, False caso contrário.
-    """
-    if user_id in VALID_CREDENTIALS and VALID_CREDENTIALS[user_id] == password:
-        return True
-    return False
-
-
-def show_login(title: str = "Connexion", require_validation: bool = False) -> dict:
-    """
-    Mostra uma janela de login em francês.
-    :param title: Título da janela
-    :param require_validation: se True, valida contra VALID_CREDENTIALS e só fecha se válido.
-    :return: dict { "id": str, "password": str, "success": bool }
-    """
-    result = {"id": "", "password": "", "success": False}
-
+def main():
+    # Janela principal
     root = tk.Tk()
-    root.title(title)
+    root.title("Connexion")
+    root.geometry("400x260")
     root.resizable(False, False)
-    root.geometry("360x200")
+    root.configure(bg="#f4f4f4")
 
-    # --- Frame principal ---
-    frm = ttk.Frame(root, padding=16)
-    frm.pack(fill=tk.BOTH, expand=True)
+    # Frame principal
+    frame = tk.Frame(root, bg="#f4f4f4")
+    frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-    # Título (opcional)
-    lbl_title = ttk.Label(frm, text="Bienvenue — Veuillez vous connecter", font=("Segoe UI", 11, "bold"))
-    lbl_title.pack(pady=(0, 10))
+    # Título
+    lbl_title = tk.Label(
+        frame,
+        text="🏋️ Connexion à votre espace",
+        font=("Segoe UI", 13, "bold"),
+        bg="#f4f4f4"
+    )
+    lbl_title.pack(pady=(0, 15))
 
     # Identifiant
-    lbl_id = ttk.Label(frm, text="Identifiant :")
-    lbl_id.pack(anchor="w")
-    entry_id = ttk.Entry(frm)
-    entry_id.pack(fill="x", pady=(0, 8))
+    lbl_identifiant = tk.Label(frame, text="Identifiant :", bg="#f4f4f4")
+    lbl_identifiant.pack(anchor="w")
+    entry_identifiant = tk.Entry(frame)
+    entry_identifiant.pack(fill="x", pady=(0, 10))
 
     # Mot de passe
-    lbl_pwd = ttk.Label(frm, text="Mot de passe :")
-    lbl_pwd.pack(anchor="w")
-    entry_pwd = ttk.Entry(frm, show="*")
-    entry_pwd.pack(fill="x", pady=(0, 6))
+    lbl_mdp = tk.Label(frame, text="Mot de passe :", bg="#f4f4f4")
+    lbl_mdp.pack(anchor="w")
+    entry_mdp = tk.Entry(frame, show="*")
+    entry_mdp.pack(fill="x", pady=(0, 10))
 
-    # Mostrar/ocultar senha
-    def toggle_password():
-        if entry_pwd.cget("show") == "":
-            entry_pwd.config(show="*")
-            btn_toggle.config(text="Afficher")
-        else:
-            entry_pwd.config(show="")
-            btn_toggle.config(text="Masquer")
+    # Função "Mot de passe oublié ?"
+    def on_forgot():
+        print("Mot de passe oublié ? (fonctionnalité à implémenter)")
 
-    btn_toggle = ttk.Button(frm, text="Afficher", width=8, command=toggle_password)
-    btn_toggle.pack(anchor="e", pady=(0, 6))
+    # Botão / link "Mot de passe oublié ?"
+    btn_forgot = tk.Button(
+        frame,
+        text="Mot de passe oublié ?",
+        bd=0,
+        fg="#1E90FF",
+        bg="#f4f4f4",
+        cursor="hand2",
+        font=("Segoe UI", 9, "underline"),
+        activebackground="#f4f4f4",
+        activeforeground="#1E90FF",
+        command=on_forgot
+    )
+    btn_forgot.pack(anchor="e", pady=(0, 15))
 
-    # Função acionada ao clicar em "Se connecter"
-    def on_submit():
-        user = entry_id.get().strip()
-        pwd = entry_pwd.get()
+    # Função do botão "Se connecter"
+    def on_connect():
+        identifiant = entry_identifiant.get()
+        mdp = entry_mdp.get()
+        print(f"Tentative de connexion : {identifiant} / {mdp} (logique à implémenter)")
 
-        if not user or not pwd:
-            messagebox.showwarning("Attention", "Veuillez entrer l'identifiant et le mot de passe.")
-            return
+    # Botão "Se connecter"
+    btn_connect = tk.Button(
+        frame,
+        text="Se connecter",
+        command=on_connect,
+        font=("Segoe UI", 12, "bold"),
+        bg="#1E90FF",
+        fg="white",
+        activebackground="#187bcd",
+        activeforeground="white",
+        relief="flat",
+        height=2
+    )
+    btn_connect.pack(fill="x")
 
-        if require_validation:
-            if validate_credentials(user, pwd):
-                messagebox.showinfo("Succès", "Connexion réussie.")
-                result.update({"id": user, "password": pwd, "success": True})
-                root.destroy()
-            else:
-                messagebox.showerror("Erreur", "Identifiant ou mot de passe incorrect.")
-                # manter a janela aberta para tentar novamente
-        else:
-            # sem validação externa -> retornamos os valores
-            result.update({"id": user, "password": pwd, "success": True})
-            root.destroy()
-
-    def on_cancel():
-        result.update({"id": "", "password": "", "success": False})
-        root.destroy()
-
-    # Botões
-    btn_frame = ttk.Frame(frm)
-    btn_frame.pack(fill="x", pady=(8, 0))
-
-    btn_conn = ttk.Button(btn_frame, text="Se connecter", command=on_submit)
-    btn_conn.pack(side="left", expand=True, fill="x", padx=(0, 6))
-
-    btn_ann = ttk.Button(btn_frame, text="Annuler", command=on_cancel)
-    btn_ann.pack(side="left", expand=True, fill="x", padx=(6, 0))
-
-    # Atalho Enter para submeter
-    root.bind("<Return>", lambda event: on_submit())
-
-    # Colocar cursor inicial no campo identifiant
-    entry_id.focus_set()
-
-    # Centralizar a janela na tela (opcional)
-    root.update_idletasks()
-    w = root.winfo_width()
-    h = root.winfo_height()
-    ws = root.winfo_screenwidth()
-    hs = root.winfo_screenheight()
-    x = (ws // 2) - (w // 2)
-    y = (hs // 2) - (h // 2)
-    root.geometry(f'+{x}+{y}')
+    # Foco inicial
+    entry_identifiant.focus_set()
 
     root.mainloop()
-    return result
 
 
-# Exemplo de uso
 if __name__ == "__main__":
-    # Se quiser forçar validação contra a tabela de exemplo, passe require_validation=True
-    cred = show_login(require_validation=False)
-    if cred["success"]:
-        print("Conecté : ", cred["id"])
-        # Aqui você pode continuar para a tela principal do app,
-        # carregar o perfil do usuário, etc.
-    else:
-        print("Connexion annulée ou échouée.")
+    main()
