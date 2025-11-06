@@ -5,30 +5,26 @@ from tkinter import messagebox
 import sys
 
 # Import des autres écrans
-import login_screen # <-- Votre écran de connexion (doit exister)
-import us_15        # <-- Votre écran de planification (doit exister)
-import us_31        # <-- NOUVEL IMPORT : Le module de défis
-
-# --- Fonctions d'Action (simulées) ---
-
-def show_user_info():
-    messagebox.showinfo("ℹ️ Mon Profil", "Nom: DUPONT\nÂge: 30 ans\nPoids: 75 kg\nObjectif: Hypertrophie")
-
-def view_sessions():
-    messagebox.showinfo("📅 Mes Séances", "Séances de la semaine :\nLundi: Upper\nMercredi: Lower\nVendredi: Full Body")
+import login_screen # <-- Votre écran de connexion
+import us_15        # <-- Votre écran de planification
+import us_31        # <-- Le module de défis
+import app_gui      # <-- NOUVEL IMPORT : Le module du profil utilisateur
 
 # --- Fonctions de Navigation ---
 
 def switch_to_login():
     """Déconnexion : Ferme le menu et affiche l'écran de connexion."""
     if messagebox.askyesno("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?"):
-        # ⚠️ APPEL VERS LOGIN_SCREEN
         login_screen.run_login_screen(root, switch_to_menu)
 
 def switch_to_planning():
     """Lance l'écran de planification (us_15)."""
-    # ⚠️ APPEL VERS US_15
     us_15.run_planning_screen(root, switch_to_menu)
+
+def switch_to_profile():
+    """Lance l'écran du profil utilisateur (app_gui)."""
+    # ⚠️ APPEL VERS APP_GUI
+    app_gui.run_profile_screen(root, switch_to_menu)
 
 def switch_to_menu():
     """Affiche l'écran du Menu Principal."""
@@ -58,8 +54,8 @@ def switch_to_menu():
     
     # Boutons de Fonctionnalités
     boutons = [
-        ("ℹ️ Mon Profil", show_user_info),
-        ("📅 Voir Mes Séances", view_sessions),
+        ("ℹ️ Mon Profil", switch_to_profile), # <-- MODIFIÉ pour appeler l'écran du profil
+        ("📅 Voir Mes Séances", lambda: messagebox.showinfo("Sessions", "Fonctionnalité non implémentée, utilisez 'Modifier Jours/Semaine'.")),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
     ]
     
@@ -69,14 +65,14 @@ def switch_to_menu():
                         activebackground="#1F618D")
         btn.pack(pady=8)
         
-    # --- NOUVEAU BOUTON : Défi (Placement en bas) ---
+    # --- Bouton Défi ---
     challenge_button = tk.Button(
         root,
         text="⚡ Défi Finisher ⚡",
         font=("Arial", 12, "bold"),
-        command=lambda: us_31.show_random_challenge(root), # <-- Appel à us_31
-        bg="#2ECC71", # Vert
-        fg="#FFFFFF", # Blanc
+        command=lambda: us_31.show_random_challenge(root),
+        bg="#2ECC71",
+        fg="#FFFFFF",
         relief="flat",
         padx=10,
         pady=5

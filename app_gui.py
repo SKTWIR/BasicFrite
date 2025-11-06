@@ -1,57 +1,51 @@
+# Fichier : app_gui.py (Adapté pour être appelé par main_menu)
+
 import tkinter as tk
 from tkinter import messagebox
-from tkinter import font as tkFont # Import pour gérer les polices
+from tkinter import font as tkFont
 
-# --- DÉFINITION DE LA CLASSE (SANS L'IMC) ---
+# --- DÉFINITION DE LA CLASSE ---
 
 class UserProfile:
-    # ... (Le reste de la classe UserProfile reste inchangé) ...
-    """
-    Une classe pour stocker et valider les informations d'un profil utilisateur.
-    (Version simplifiée sans calcul d'IMC)
-    """
+    """Une classe pour stocker et valider les informations d'un profil utilisateur."""
     
     def __init__(self, first_name, last_name, age=None, weight=None, height=None):
-        """
-        Le constructeur valide les données dès la création.
-        Lève une ValueError si les données sont invalides.
-        """
-        
-        # 1. Valider les noms (requis)
         if not first_name or not last_name:
             raise ValueError("Le prénom et le nom ne peuvent pas être vides.")
         self.first_name = first_name
         self.last_name = last_name
 
-        # 2. Valider l'âge (optionnel, mais doit être positif si fourni)
         if age is not None:
             if not isinstance(age, int) or age <= 0:
                 raise ValueError("L'âge doit être un nombre entier positif.")
         self.age = age
 
-        # 3. Valider le poids (optionnel, mais doit être positif si fourni)
         if weight is not None:
             if not isinstance(weight, (float, int)) or weight <= 0:
                 raise ValueError("Le poids (kg) doit être un nombre positif.")
         self.weight = weight
 
-        # 4. Valider la taille (optionnelle, mais doit être positive si fournie)
         if height is not None:
             if not isinstance(height, (float, int)) or height <= 0 or height > 3:
                 raise ValueError("La taille (m) doit être un nombre positif (ex: 1.75).")
         self.height = height
 
-# --- Fin de la définition de la classe ---
+
+# --- VARIABLES GLOBALES (seront remplacées par des variables locales dans run_profile_screen) ---
+# Nécessaire pour submit_data, que nous devons rendre accessible localement.
+entry_first_name = None
+entry_last_name = None
+entry_age = None
+entry_weight = None
+entry_height = None
+current_root = None # Pour stocker la référence à la fenêtre
 
 
-def submit_data():
+def submit_data(return_callback):
     """
     Récupère les données des champs, tente de créer un UserProfile.
     Affiche un succès ou une erreur.
-    NOTE: Cette fonction DOIT accéder aux variables globales définies dans run_main_menu.
     """
-    # NOTE: Les variables globales (entry_first_name, etc.) sont accessibles
-    # car elles sont définies juste avant l'appel à root.mainloop()
     try:
         # 1. Récupérer les données des champs
         first_name = entry_first_name.get()
@@ -64,121 +58,107 @@ def submit_data():
 
         # 3. Tenter de créer l'utilisateur
         user = UserProfile(
-            first_name=first_name,
-            last_name=last_name,
-            age=age,
-            weight=weight,
-            height=height
+            first_name=first_name, last_name=last_name, age=age, weight=weight, height=height
         )
 
-        # 4. Afficher un succès (message simplifié)
-        messagebox.showinfo(
-            "Succès",
-            f"Utilisateur {user.first_name} créé avec succès!"
-        )
+        # 4. Afficher un succès et revenir au menu
+        messagebox.showinfo("Succès", f"Profil de {user.first_name} mis à jour! Retour au menu.")
+        return_callback() # Retourne au menu principal après succès
         
     except ValueError as e:
         # 5. Afficher une erreur
         messagebox.showerror("Erreur de validation", str(e))
 
 
-def run_main_menu():
+def return_to_menu(callback):
     """
-    Fonction principale pour lancer l'interface du profil utilisateur.
-    Ceci permet au module d'être importé et appelé.
+    Ferme cet écran et exécute la fonction de rappel (switch_to_menu).
     """
-    global entry_first_name, entry_last_name, entry_age, entry_weight, entry_height # Déclaration des variables globales pour submit_data
+    callback()
 
-    # --- Configuration de la fenêtre principale ---
-    root = tk.Tk()
-    root.title("Profil Utilisateur")
+
+def run_profile_screen(root_window, switch_to_menu_callback):
+    """
+    Lance l'interface du profil utilisateur dans la fenêtre fournie.
+    """
+    global entry_first_name, entry_last_name, entry_age, entry_weight, entry_height, current_root
+
+    # 1. Nettoyer l'écran précédent
+    for widget in root_window.winfo_children():
+        widget.destroy()
+
+    # 2. Configuration de la fenêtre
+    root_window.title("Profil Utilisateur")
+    root_window.geometry("550x450") # Augmentation de la taille pour l'affichage du profil
+    root_window.resizable(False, False)
+    current_root = root_window # Stocker la référence
 
     # --- Définition du style (THÈME BLEU) ---
-    BG_COLOR = "#D6EAF8"      # Bleu clair pour le fond
-    TEXT_COLOR = "#17202A"    # Noir/Bleu foncé pour le texte
-    BUTTON_BG = "#3498DB"      # Bleu vif pour le bouton
-    BUTTON_FG = "#FFFFFF"      # Blanc pour le texte du bouton
+    BG_COLOR = "#D6EAF8"
+    TEXT_COLOR = "#17202A"
+    BUTTON_BG = "#3498DB"
+    BUTTON_FG = "#FFFFFF"
     FONT_LABEL = ("Helvetica", 11)
     FONT_ENTRY = ("Helvetica", 11)
     FONT_BUTTON = ("Helvetica", 11, "bold")
 
-    # Appliquer la couleur de fond à la fenêtre principale
-    root.configure(bg=BG_COLOR)
-    root.resizable(False, False)
+    root_window.configure(bg=BG_COLOR)
 
     # --- Cadre principal (pour l'espacement) ---
-    main_frame = tk.Frame(root, bg=BG_COLOR, padx=20, pady=20)
+    main_frame = tk.Frame(root_window, bg=BG_COLOR, padx=20, pady=20)
     main_frame.pack(expand=True, fill="both")
 
+    # --- Label Titre
+    tk.Label(main_frame, text="ℹ️ Mon Profil", font=("Helvetica", 16, "bold"), bg=BG_COLOR).grid(row=0, column=0, columnspan=2, pady=10)
 
     # --- Création des widgets (Labels et Champs de saisie) ---
     fields = {
-        "Prénom": tk.StringVar(),
-        "Nom": tk.StringVar(),
-        "Âge": tk.StringVar(),
-        "Poids (kg)": tk.StringVar(),
-        "Taille (m)": tk.StringVar(),
+        "Prénom": tk.StringVar(value="Jean"),
+        "Nom": tk.StringVar(value="DUPONT"),
+        "Âge": tk.StringVar(value="30"),
+        "Poids (kg)": tk.StringVar(value="75.5"),
+        "Taille (m)": tk.StringVar(value="1.78"),
     }
 
-    row_index = 0
+    row_index = 1
     entries = {} 
 
     for label_text, var in fields.items():
-        # Label
-        label = tk.Label(
-            main_frame, 
-            text=f"{label_text} :", 
-            font=FONT_LABEL, 
-            bg=BG_COLOR, 
-            fg=TEXT_COLOR
-        )
+        label = tk.Label(main_frame, text=f"{label_text} :", font=FONT_LABEL, bg=BG_COLOR, fg=TEXT_COLOR)
         label.grid(row=row_index, column=0, padx=10, pady=8, sticky="e")
         
-        # Champ de saisie (Entry)
-        entry = tk.Entry(
-            main_frame, 
-            textvariable=var, 
-            width=40, 
-            font=FONT_ENTRY,
-            relief="flat",    # Style plus moderne
-            bg="#FEFEFE"      # Fond blanc pour le champ
-        )
+        entry = tk.Entry(main_frame, textvariable=var, width=40, font=FONT_ENTRY, relief="flat", bg="#FEFEFE")
         entry.grid(row=row_index, column=1, padx=10, pady=8)
         
-        # Stocker les champs par leur nom (pour l'accès global)
-        if label_text == "Prénom": entries["first_name"] = entry
-        if label_text == "Nom": entries["last_name"] = entry
-        if label_text == "Âge": entries["age"] = entry
-        if label_text == "Poids (kg)": entries["weight"] = entry
-        if label_text == "Taille (m)": entries["height"] = entry
+        # Stocker les champs
+        if label_text == "Prénom": entry_first_name = entry
+        elif label_text == "Nom": entry_last_name = entry
+        elif label_text == "Âge": entry_age = entry
+        elif label_text == "Poids (kg)": entry_weight = entry
+        elif label_text == "Taille (m)": entry_height = entry
         
         row_index += 1
 
-    # Rendre les variables des champs globales pour la fonction submit_data
-    entry_first_name = entries["first_name"]
-    entry_last_name = entries["last_name"]
-    entry_age = entries["age"]
-    entry_weight = entries["weight"]
-    entry_height = entries["height"]
-
     # --- Bouton de soumission ---
-    submit_button = tk.Button(
-        main_frame, 
-        text="Enregistrer", 
-        command=submit_data,
-        font=FONT_BUTTON,
-        bg=BUTTON_BG,
-        fg=BUTTON_FG,
-        relief="flat",       # Style moderne
-        borderwidth=0,
-        activebackground="#2874A6", # Couleur au clic
-        activeforeground="#FFFFFF"
+    submit_button = tk.Button(main_frame, text="Enregistrer", command=lambda: submit_data(switch_to_menu_callback),
+        font=FONT_BUTTON, bg=BUTTON_BG, fg=BUTTON_FG, relief="flat", borderwidth=0, activebackground="#2874A6", activeforeground="#FFFFFF"
     )
     submit_button.grid(row=row_index, column=1, pady=(20, 10), padx=10, sticky="e")
+    row_index += 1
 
-    # --- Lancer l'application ---
-    root.mainloop()
+    # --- Bouton Retour Menu ---
+    return_button = tk.Button(main_frame, text="⬅️ Retour Menu", command=lambda: return_to_menu(switch_to_menu_callback),
+        font=("Helvetica", 10), bg="#AAAAAA", relief="flat"
+    )
+    return_button.grid(row=row_index, column=0, columnspan=2, pady=(10, 0), sticky="s")
 
-# Ceci permet de lancer le menu si app_gui.py est exécuté directement
+
+# --- Ceci est nécessaire si le fichier est exécuté seul ---
 if __name__ == '__main__':
-    run_main_menu()
+    def dummy_callback():
+        print("Retour Menu Principal demandé.")
+        sys.exit()
+
+    root = tk.Tk()
+    run_profile_screen(root, dummy_callback)
+    root.mainloop()
