@@ -1,11 +1,11 @@
-# --- 🏋️ Définition du nombre de séances par semaine ---
+# --- Définition du nombre de séances par semaine ---
 
 # Variable pour stocker le nombre de séances d'entraînement
 # La valeur par défaut est mise à 3 comme exemple.
 # Dans une vraie application, cette valeur serait saisie par l'utilisateur.
 nombre_seances_par_semaine = 3
 
-# --- 🧠 Logique d'adaptation de la répartition des groupes musculaires ---
+# ---  Logique d'adaptation de la répartition des groupes musculaires ---
 
 def obtenir_repartition_musculaire(nb_seances: int) -> dict:
     """
@@ -29,7 +29,7 @@ def obtenir_repartition_musculaire(nb_seances: int) -> dict:
     # si le nombre de séances n'est pas géré (ou si l'utilisateur entre 0, >6, etc.)
     return repartitions.get(nb_seances, ["Répartition Personnalisée / Non Gérée"])
 
-# --- 💡 Utilisation dans le code ---
+# --- Utilisation dans le code ---
 
 # Appel de la fonction pour obtenir le planning
 planning_semaine = obtenir_repartition_musculaire(nombre_seances_par_semaine)
