@@ -1,4 +1,4 @@
-id_personne_exo;date;id_exercice;poids;id_user
+﻿id_personne_exo;date;id_exercice;poids;id_user
 1;2025-11-07;820;12;5
 2;2025-11-07;812;15;5
 3;2025-11-07;2858;20;5
