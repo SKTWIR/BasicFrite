@@ -22,12 +22,28 @@ import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
 import US_11_9 # Module de Recherche Exercice
 import US_35_AjoutNouvelExo # <-- NOUVEL IMPORT (fusionné)
+import US_21_Export_Entrainement
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
 
 # --- Variable Globale pour stocker l'utilisateur connecté ---
 current_user_data = None
+
+# --- Variable pour stocker l'ID utilisateur connecté ---
+USER_ID = None  # Sera mis à jour automatiquement après connexion
+
+# --- Fonction utilitaire pour récupérer l'id_user à partir du pseudo ---
+def get_user_id_by_pseudo(pseudo):
+    try:
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row['pseudo'] == pseudo:
+                    return row['id_user']
+    except Exception:
+        pass
+    return None
 
 # --- Fonctions d'Action/Simulations ---
 
@@ -210,10 +226,19 @@ def switch_to_exercise_search():
     # Le callback (switch_to_menu) attend user_data, donc nous utilisons lambda
     US_11_9.run_exercise_search_screen(root, lambda: switch_to_menu(current_user_data))
 
+def switch_to_export_entrainement():
+    """Lance l'écran d'export d'entraînement (US_21_Export_Entrainement)."""
+    US_21_Export_Entrainement.run_export_entrainement_screen(root, switch_to_menu, USER_ID)
+
 def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
-    global root, current_user_data
+    global root, current_user_data, USER_ID
     current_user_data = user_data 
+    # Si USER_ID n'est pas déjà défini, on le récupère à partir du pseudo
+    if current_user_data and (not USER_ID or USER_ID != current_user_data.get('id_user')):
+        pseudo = current_user_data.get('pseudo')
+        USER_ID = get_user_id_by_pseudo(pseudo)
+        current_user_data['id_user'] = USER_ID
     user_first_name = current_user_data.get('prénom', 'sportif')
     
     # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
@@ -247,6 +272,7 @@ def switch_to_menu(user_data):
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
         ("🔍 Recherche Exercice", switch_to_exercise_search), # <-- AJOUTÉ (fusionné)
+        ("⬇️ Export Entrainement", switch_to_export_entrainement), # <-- AJOUTÉ
     ]
 
     for text, command in boutons:
