@@ -282,8 +282,8 @@ def switch_to_menu(user_data):
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
         ("ℹ️ Mon Profil", switch_to_profile), 
-        ("📅 VOIR/LOGUER SÉANCES", launch_training_journal), # <-- MODIFIÉ
-        ("🗓️ Modifier Jours/Semaine", switch_to_planning),
+        ("📅 Voir nos séances", launch_training_journal), # <-- MODIFIÉ
+        ("🗓️ Jours/Semaine et Objectif", switch_to_planning),
         ("🔍 Recherche Exercice", switch_to_exercise_search), 
     ]
 
