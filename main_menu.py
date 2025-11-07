@@ -1,17 +1,10 @@
-# Fichier : main_menu.py (Code final complet et fusionné)
+# Fichier : main_menu.py (Fusionné et Corrigé)
 
 import tkinter as tk
 from tkinter import messagebox
 import sys
 import os 
 import csv 
-
-# Notifications générales stockées en mémoire (simulation de base de données)
-NOTIFICATIONS = []
-
-def add_notification(title: str, message: str):
-    """Ajoute une notification dans la liste globale (simulé)."""
-    NOTIFICATIONS.append({"title": title, "message": message})
 
 # Import des autres écrans
 import connection_initial
@@ -22,6 +15,55 @@ import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
 import US_11_9 # Module de recherche d'exercices
 import US_35_AjoutNouvelExo # Module d'ajout d'exercices
+
+# Notifications générales stockées en mémoire (simulation de base de données)
+NOTIFICATIONS = []
+
+def add_notification(title: str, message: str):
+    """Ajoute une notification dans la liste globale (simulé)."""
+    NOTIFICATIONS.append({"title": title, "message": message})
+
+# --- Thème clair / sombre (US 27) ---
+IS_DARK_MODE = False  # False = clair, True = sombre
+
+def get_theme_colors():
+    """
+    Retourne un dictionnaire avec les couleurs du thème actuel.
+    """
+    if IS_DARK_MODE:
+        return {
+            "BG_COLOR": "#2C3E50",   # Fond sombre
+            "FRAME_BG": "#34495E",  # Cadre plus clair
+            "BUTTON_BG": "#5D6D7E",  # Boutons gris/bleu
+            "BUTTON_FG": "#FFFFFF",  # Texte des boutons blanc
+            "TEXT_COLOR": "#ECF0F1"  # Texte principal clair
+        }
+    else:
+        return {
+            "BG_COLOR": "#ECF0F1",   # Fond gris clair (défaut)
+            "FRAME_BG": "#FFFFFF",   # Cadre blanc
+            "BUTTON_BG": "#2980B9",   # Bleu (défaut)
+            "BUTTON_FG": "#FFFFFF",   # Texte des boutons blanc
+            "TEXT_COLOR": "#17202A"   # Texte principal foncé
+        }
+
+def toggle_theme():
+    """
+    Inverse le thème (clair/sombre) et recharge le menu principal.
+    """
+    global IS_DARK_MODE
+    IS_DARK_MODE = not IS_DARK_MODE
+
+    # Recharge le menu actuel (utilisateur ou admin) pour appliquer le thème
+    if current_user_data:
+        if current_user_data.get('is_admin', 'False').lower() == 'true':
+            run_admin_menu()
+        else:
+            switch_to_menu(current_user_data)
+    else:
+        # Si personne n'est connecté (ne devrait pas arriver ici, mais par sécurité)
+        switch_to_login()
+
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -62,7 +104,7 @@ def delete_account():
         fieldnames = []
         found = False
         try:
-            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 fieldnames = reader.fieldnames 
                 for row in reader:
@@ -96,8 +138,11 @@ def open_chat_window():
     chat.title("💬 Chat - Notifications")
     chat.geometry("450x400")
 
-    BG_COLOR = "#ECF0F1"
-    TEXT_COLOR = "#17202A"
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    TEXT_COLOR = theme["TEXT_COLOR"]
+    CARD_BG = theme["FRAME_BG"]
+
     chat.configure(bg=BG_COLOR)
 
     tk.Label(
@@ -125,15 +170,15 @@ def open_chat_window():
         canvas.configure(scrollregion=canvas.bbox("all"))
     scroll_frame.bind("<Configure>", on_config)
     for notif in NOTIFICATIONS:
-        card = tk.Frame(scroll_frame, bg="white", bd=1, relief="solid")
+        card = tk.Frame(scroll_frame, bg=CARD_BG, bd=1, relief="solid")
         card.pack(fill="x", pady=5)
         titre = notif.get("title") or "Notification"
         tk.Label(
-            card, text=titre, font=("Arial", 11, "bold"), bg="white", anchor="w"
+            card, text=titre, font=("Arial", 11, "bold"), bg=CARD_BG, fg=TEXT_COLOR, anchor="w"
         ).pack(fill="x", padx=8, pady=(4, 0))
         tk.Label(
             card, text=notif.get("message", ""), font=("Arial", 10),
-            justify="left", bg="white", anchor="w", wraplength=380
+            justify="left", bg=CARD_BG, fg=TEXT_COLOR, anchor="w", wraplength=380
         ).pack(fill="x", padx=8, pady=(0, 6))
 
 
@@ -141,9 +186,11 @@ def open_chat_window():
 
 def open_admin_notification_window():
     """Fenêtre pour que l'administrateur envoie une notification générale (USER STORY 40)."""
-    BG_COLOR = "#ECF0F1"
-    BTN_PRIMARY = "#2980B9"
-    BTN_PRIMARY_ACTIVE = "#1F618D"
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    BTN_PRIMARY = theme["BUTTON_BG"]
+    BTN_PRIMARY_ACTIVE = "#1F618D" # Gardé foncé pour le clic
+    
     win = tk.Toplevel(root)
     win.title("📢 Envoyer une notification")
     win.geometry("500x380")
@@ -219,7 +266,6 @@ def switch_to_admin_menu(user_data):
 
 def switch_to_exercise_search():
     """Lance l'écran de recherche d'exercices (US_11_9)."""
-    # Renomme l'appel pour correspondre à votre import (US_11_9_Recherche_Exo)
     US_11_9.run_exercise_search_screen(root, lambda: switch_to_menu(current_user_data))
 
 
@@ -230,7 +276,7 @@ def switch_to_menu(user_data):
     user_first_name = current_user_data.get('prénom', 'sportif')
     
     # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
-    root.geometry("450x570") # Augmenté pour le nouveau bouton
+    root.geometry("450x620") # Augmenté pour le bouton Thème
     # --- FIN CORRECTION ---
     
     root.resizable(False, False)
@@ -238,17 +284,19 @@ def switch_to_menu(user_data):
     for widget in root.winfo_children():
         widget.destroy()
 
-    BG_COLOR = "#ECF0F1"
-    BUTTON_BG = "#2980B9"
-    BUTTON_FG = "#FFFFFF"
+    # --- couleurs selon le thème actuel ---
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    BUTTON_BG = theme["BUTTON_BG"]
+    BUTTON_FG = theme["BUTTON_FG"]
+    TEXT_COLOR = theme["TEXT_COLOR"]
     FONT_BUTTON = ("Arial", 12, "bold")
-    TEXT_COLOR = "#17202A"
 
     root.configure(bg=BG_COLOR)
 
     tk.Label(
         root, text="💪 Menu Principal", font=("Arial", 20, "bold"),
-        bg=BG_COLOR, fg="#2C3E50"
+        bg=BG_COLOR, fg=TEXT_COLOR # Titre s'adapte au thème
     ).pack(pady=20)
 
     button_frame = tk.Frame(root, bg=BG_COLOR)
@@ -259,7 +307,7 @@ def switch_to_menu(user_data):
         ("ℹ️ Mon Profil", switch_to_profile), 
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
-        ("🔍 Recherche Exercice", switch_to_exercise_search), # <-- AJOUTÉ (fusionné)
+        ("🔍 Recherche Exercice", switch_to_exercise_search), 
     ]
 
     for text, command in boutons:
@@ -286,6 +334,21 @@ def switch_to_menu(user_data):
     )
     btn_motivation.pack(pady=8)
     
+    # --- AJOUT DU BOUTON THÈME (fusionné) ---
+    tk.Button(
+        button_frame,
+        text="🎨 Thème clair / sombre",
+        command=toggle_theme,
+        font=FONT_BUTTON,
+        bg=BUTTON_BG,
+        fg=BUTTON_FG,
+        width=25,
+        height=1,
+        relief="flat",
+        bd=0,
+        activebackground="#1F618D"
+    ).pack(pady=8)
+
     # Bouton Supprimer le compte (fonctionnel)
     tk.Button(button_frame, 
               text="🗑️ Supprimer mon compte", 
@@ -323,11 +386,13 @@ def run_admin_menu():
     for widget in root.winfo_children():
         widget.destroy()
 
-    BG_COLOR = "#ECF0F1"
-    BUTTON_BG = "#5D6D7E"
+    # --- Thème Admin (fusionné) ---
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    BUTTON_BG = "#5D6D7E" # Garde la couleur Admin
     BUTTON_FG = "#FFFFFF"
     FONT_BUTTON = ("Arial", 12, "bold")
-    TEXT_COLOR = "#17202A"
+    TEXT_COLOR = theme["TEXT_COLOR"]
 
     # --- CORRECTION HAUTEUR ADMIN ---
     root.geometry("450x500") # Augmenté pour 6 boutons
@@ -336,7 +401,7 @@ def run_admin_menu():
 
     tk.Label(
         root, text="🔑 Menu Administrateur", font=("Arial", 20, "bold"),
-        bg=BG_COLOR, fg="#17202A"
+        bg=BG_COLOR, fg=TEXT_COLOR
     ).pack(pady=20)
 
     button_frame = tk.Frame(root, bg=BG_COLOR)
@@ -369,7 +434,7 @@ def run_admin_menu():
     tk.Button(root, text="< Retour Menu Utilisateur", 
                command=lambda: switch_to_menu(current_user_data), 
                font=("Arial", 10),
-               bg="#AAAAAA", fg="#17202A", relief="flat").pack(pady=20)
+               bg="#AAAAAA", fg=TEXT_COLOR, relief="flat").pack(pady=20)
 
 
 def run_app_start():
