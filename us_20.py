@@ -19,6 +19,7 @@ CSV_ENTRAINEMENT = "Entrainement.csv"
 CSV_EXERCICE_LINKS = "Entrainement_Exercice.csv"
 CSV_EXERCICE_MASTER = "Exercice_musculation.csv"
 CSV_PERSONNE_EXO = "Personne_Exo.csv" # Fichier de log des séries
+CSV_PERSONNE_ENTRAINEMENT = "Personne_Entrainement.csv" # <-- NOUVEAU FICHIER
 
 # Vérification que tous les fichiers nécessaires existent
 fichiers_manquants = []
@@ -151,10 +152,10 @@ def load_sessions_from_csv(filepath, exercise_links, exercise_names_map):
                         exercise_data_list.append(full_exercise_info)
                     
                     sessions[session_key] = {
-                        "date": "N/A",      
-                        "notes": "",       
+                        "date": "N/A", # Cette date n'est plus utilisée pour les notes
+                        "notes": "", # Ceci n'est plus qu'une valeur par défaut      
                         "exercises": exercise_data_list,
-                        "csv_id": id_entrainement,
+                        "csv_id": id_entrainement, # <-- TRES IMPORTANT
                         "csv_programme": programme,
                         "csv_temps_moyen": temps
                     }
@@ -180,8 +181,6 @@ print(f"-> {len(SESSION_DATA)} séances chargées.")
 print("--- Démarrage de l'application ---")
 
 # --- LISTE MAÎTRESSE DES EXERCICES (DYNAMIQUE) ---
-# NOTE: Cette liste n'est plus utilisée si 'créer séance' est supprimé,
-# mais ne cause pas d'erreur. On peut la laisser.
 MASTER_EXERCISE_LIST = sorted(list(set(EXERCISE_NAMES_MAP.values())))
 
 
@@ -197,7 +196,7 @@ FONT_BUTTON = ("Helvetica", 11, "bold")
 FONT_LINK = ("Helvetica", 10, "underline")
 
 
-# --- NOUVELLE FONCTION HELPER POUR LE CSV DE LOG ---
+# --- FONCTIONS HELPER POUR LES ID CSV ---
 
 def get_next_personne_exo_id():
     """
@@ -243,6 +242,134 @@ def get_next_personne_exo_id():
         print(f"Erreur inattendue get_next_personne_exo_id: {e}")
         return -1
 
+# --- NOUVELLE FONCTION HELPER ---
+def get_next_personne_entrainement_id():
+    """
+    Vérifie Personne_Entrainement.csv, lit l'ID le plus haut et retourne max_id + 1.
+    Crée le fichier avec en-tête s'il n'existe pas.
+    """
+    HEADER = ['cle_id', 'id_user', 'date_entrainement', 'id_entrainement', 'note']
+    file_exists = os.path.exists(CSV_PERSONNE_ENTRAINEMENT)
+    
+    if not file_exists:
+        try:
+            with open(CSV_PERSONNE_ENTRAINEMENT, mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file, delimiter=';')
+                writer.writerow(HEADER)
+            return 1
+        except IOError as e:
+            messagebox.showerror("Erreur Fichier", f"Impossible de créer {CSV_PERSONNE_ENTRAINEMENT}.\n{e}")
+            return -1
+
+    max_id = 0
+    try:
+        with open(CSV_PERSONNE_ENTRAINEMENT, mode='r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file, delimiter=';')
+            try:
+                next(reader) 
+            except StopIteration:
+                return 1
+                
+            for row in reader:
+                if row:
+                    try:
+                        current_id = int(row[0])
+                        if current_id > max_id:
+                            max_id = current_id
+                    except (IndexError, ValueError):
+                        continue
+        return max_id + 1
+        
+    except IOError as e:
+        messagebox.showerror("Erreur Fichier", f"Impossible de lire {CSV_PERSONNE_ENTRAINEMENT}.\n{e}")
+        return -1
+    except Exception as e:
+        print(f"Erreur inattendue get_next_personne_entrainement_id: {e}")
+        return -1
+
+
+# --- FONCTION DE NOTIFICATION DE PROGRESSION ---
+
+def notify_if_progress(user_id, id_exercice, exercise_name, new_poids):
+    """
+    MODIFIÉE: Trouve le POIDS MAX précédent pour un user/exercice
+    et affiche une alerte si le new_poids est un record personnel.
+    Lit depuis CSV_PERSONNE_EXO.
+    """
+    max_previous_poids = 0.0
+    
+    if not os.path.exists(CSV_PERSONNE_EXO):
+        return 
+
+    try:
+        new_poids_float = float(new_poids)
+    except ValueError:
+        print("Erreur: Le nouveau poids n'est pas un nombre valide.")
+        return 
+
+    try:
+        with open(CSV_PERSONNE_EXO, newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row.get('id_user') == str(user_id) and row.get('id_exercice') == str(id_exercice):
+                    try:
+                        current_poids = float(row.get('poids', 0))
+                        if current_poids > max_previous_poids:
+                            max_previous_poids = current_poids
+                    except (ValueError, TypeError):
+                        continue 
+
+        if new_poids_float > max_previous_poids and max_previous_poids > 0:
+            root = tk.Tk()
+            root.withdraw()
+            messagebox.showinfo(
+                "Nouveau Record Personnel !",
+                f"Bravo ! Vous avez battu votre record sur : {exercise_name}\n\n"
+                f"Ancien record : {max_previous_poids} kg\n"
+                f"Nouveau record : {new_poids_float} kg"
+            )
+            root.destroy()
+        elif max_previous_poids == 0 and new_poids_float > 0:
+             print(f"Première fois pour {exercise_name}. Pas de record à battre.")
+        
+    except Exception as e:
+        print(f"Erreur lors de la vérification de progression : {e}")
+        
+# --- NOUVELLE FONCTION ---
+def open_date_picker_for_note():
+    """
+    Ouvre un petit calendrier popup pour choisir la date de la note.
+    Met à jour la variable training_date_var.
+    """
+    popup = tk.Toplevel(root)
+    popup.title("Choisir une date")
+    popup.geometry("300x300")
+    popup.configure(bg=FRAME_BG)
+    popup.resizable(False, False)
+    popup.transient(root); popup.grab_set()
+
+    try:
+        default_date = datetime.strptime(training_date_var.get(), '%Y-%m-%d').date()
+    except ValueError:
+        default_date = date.today()
+
+    cal = Calendar(
+        popup,
+        selectmode='day',
+        year=default_date.year,
+        month=default_date.month,
+        day=default_date.day,
+        date_pattern='yyyy-mm-dd'
+    )
+    cal.pack(fill="both", expand=True, padx=10, pady=10)
+
+    def on_click(event):
+        """Met à jour la date et ferme le popup."""
+        training_date_var.set(cal.get_date())
+        popup.destroy()
+
+    cal.bind("<<CalendarSelected>>", on_click)
+
 
 # --- FONCTIONS LOGIQUES ---
 
@@ -256,6 +383,7 @@ def on_session_selected(event):
     try: data = SESSION_DATA[session_name]
     except KeyError: return
     
+    # Activer les sections
     notes_frame.config(text="Détails de la Séance")
     notes_text.config(state="normal")
     save_notes_btn.config(state="normal")
@@ -267,9 +395,16 @@ def on_session_selected(event):
     reps_entry.config(state="readonly") 
     save_log_btn.config(state="normal")
     
-    date_var.set(f"Date de la séance : {data.get('date', 'N/A')}")
+    # --- NOUVEAU : Activer la section date ---
+    training_date_var.set(date.today().isoformat())
+    training_date_entry.config(state="normal")
+    date_picker_btn.config(state="normal")
+    # --- FIN NOUVEAU ---
+
+    # Remplir les détails
     notes_text.delete("1.0", "end")
-    notes_text.insert("1.0", data.get('notes', ''))
+    # On ne pré-remplit plus les notes, l'utilisateur en crée une nouvelle
+    notes_text.insert("1.0", data.get('notes', '')) 
     
     exercise_data_list = data.get('exercises', [])
     exercise_names_list = [exo_info["name"] for exo_info in exercise_data_list]
@@ -309,17 +444,70 @@ def on_exercise_selected(event):
     except Exception as e:
         print(f"Erreur inattendue dans on_exercise_selected: {e}")
 
+# --- FONCTION DE SAUVEGARDE DES NOTES (MODIFIÉE) ---
 def save_notes():
+    """
+    Sauvegarde la note de séance dans Personne_Entrainement.csv.
+    """
     session_name = session_var.get()
-    if not session_name: messagebox.showwarning("Aucune séance", "Veuillez d'abord sélectionner une séance."); return
-    new_notes = notes_text.get("1.0", "end-1c")
-    SESSION_DATA[session_name]['notes'] = new_notes
-    print(f"Notes pour '{session_name}' sauvegardées (en mémoire) :\n{new_notes}")
-    messagebox.showinfo("Sauvegardé", "Vos notes ont été enregistrées (pour cette session).")
+    if not session_name: 
+        messagebox.showwarning("Aucune séance", "Veuillez d'abord sélectionner une séance.")
+        return
+
+    # 1. Récupérer les données de l'interface
+    training_date = training_date_var.get()
+    new_notes = notes_text.get("1.0", "end-1c").strip()
+    
+    # 2. Valider les entrées
+    if not training_date:
+        messagebox.showwarning("Date manquante", "Veuillez choisir une date pour cet entraînement.")
+        return
+    try:
+        # Valider le format de la date
+        datetime.strptime(training_date, '%Y-%m-%d')
+    except ValueError:
+        messagebox.showwarning("Format de date invalide", "Veuillez entrer une date au format AAAA-MM-JJ.")
+        return
+        
+    if not new_notes:
+        messagebox.showwarning("Note vide", "Veuillez écrire une note avant de sauvegarder.")
+        return
+
+    # 3. Récupérer les données "cachées"
+    try:
+        id_entrainement = SESSION_DATA[session_name]['csv_id']
+    except KeyError:
+        messagebox.showerror("Erreur de Séance", "Impossible de trouver l'ID de la séance sélectionnée.")
+        return
+    
+    id_user = "1" # Placeholder
+    
+    # 4. Obtenir le nouvel ID pour le CSV
+    cle_id = get_next_personne_entrainement_id()
+    if cle_id == -1:
+        return # Erreur déjà affichée par la fonction helper
+
+    # 5. Préparer la ligne
+    # cle_id; id_user; date_entrainement; id_entrainement; note
+    new_row = [cle_id, id_user, training_date, id_entrainement, new_notes]
+    
+    # 6. Écrire dans le CSV
+    try:
+        with open(CSV_PERSONNE_ENTRAINEMENT, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file, delimiter=';')
+            writer.writerow(new_row)
+        
+        messagebox.showinfo("Sauvegardé", "Votre note d'entraînement a été enregistrée avec succès.")
+        print(f"Note enregistrée: {new_row}")
+        
+    except IOError as e:
+        messagebox.showerror("Erreur Sauvegarde", f"Impossible d'écrire dans {CSV_PERSONNE_ENTRAINEMENT}.\n{e}")
+    except Exception as e:
+        messagebox.showerror("Erreur Inconnue", f"Une erreur est survenue lors de la sauvegarde : {e}")
 
 def save_exercise_log():
     """
-    FONCTION MODIFIÉE POUR SAUVEGARDER DANS Personne_Exo.csv
+    Sauvegarde une série dans Personne_Exo.csv et notifie si progression.
     """
     session_name = session_var.get()
     exercise_name = exercise_var.get()
@@ -330,6 +518,7 @@ def save_exercise_log():
         messagebox.showwarning("Champs manquants", "Veuillez sélectionner un exercice et remplir le champ 'Poids'.")
         return
 
+    # Utilise la date du jour pour le log de la SÉRIE
     current_date = date.today().isoformat()
     
     exo_id_to_save = None
@@ -349,6 +538,9 @@ def save_exercise_log():
     
     user_id = "1" 
     
+    # Vérifier la progression AVANT de sauvegarder la nouvelle valeur
+    notify_if_progress(user_id, exo_id_to_save, exercise_name, weight)
+
     next_id = get_next_personne_exo_id()
     if next_id == -1: 
         print("Sauvegarde annulée à cause d'une erreur de lecture/écriture de l'ID.")
@@ -372,11 +564,8 @@ def save_exercise_log():
     except Exception as e:
         messagebox.showerror("Erreur Inconnue", f"Une erreur est survenue lors de la sauvegarde : {e}")
 
-# --- FONCTIONS DE CRÉATION DE SÉANCE (SUPPRIMÉES) ---
-# handle_save_new_session et open_create_session_popup ont été retirées.
 
-
-# --- NOUVELLE FONCTION HELPER POUR LE CALENDRIER ---
+# --- FONCTION HELPER POUR LE CALENDRIER ---
 
 def get_all_logged_dates():
     """
@@ -385,35 +574,32 @@ def get_all_logged_dates():
     """
     logged_dates = set()
     if not os.path.exists(CSV_PERSONNE_EXO):
-        return logged_dates # Retourne un set vide si le fichier n'existe pas encore
+        return logged_dates 
 
     try:
         with open(CSV_PERSONNE_EXO, mode='r', encoding='utf-8-sig') as file:
-            # Utiliser DictReader est plus sûr pour trouver la colonne 'date'
             reader = csv.DictReader(file, delimiter=';')
             for row in reader:
                 date_str = row.get('date')
                 if date_str:
                     try:
-                        # Juste pour valider le format
                         datetime.strptime(date_str, '%Y-%m-%d')
                         logged_dates.add(date_str)
                     except ValueError:
-                        continue # Ignorer format date incorrect
+                        continue 
     except Exception as e:
         print(f"Erreur en lisant les dates de log : {e}")
     
     return logged_dates
 
-# --- FONCTIONS POUR LE CALENDRIER (MODIFIÉES) ---
+# --- FONCTIONS POUR LE CALENDRIER (AFFICHAGE) ---
 
 def show_sessions_for_date(selected_date_iso):
     """
-    MODIFIÉE: Affiche les exercices et poids loggés pour une date
+    Affiche les exercices et poids loggés pour une date
     spécifique en lisant Personne_Exo.csv.
     """
     
-    # 1. Trouver les exercices loggés pour cette date
     logs_on_this_day = []
     if os.path.exists(CSV_PERSONNE_EXO):
         try:
@@ -421,7 +607,6 @@ def show_sessions_for_date(selected_date_iso):
                 reader = csv.DictReader(file, delimiter=';')
                 for row in reader:
                     if row.get('date') == selected_date_iso:
-                        # Récupérer le nom de l'exercice via la MAP globale
                         exo_id = row.get('id_exercice')
                         exo_name = EXERCISE_NAMES_MAP.get(exo_id, f"ID Exercice: {exo_id}")
                         
@@ -434,7 +619,6 @@ def show_sessions_for_date(selected_date_iso):
             messagebox.showerror("Erreur Lecture", f"Impossible de lire {CSV_PERSONNE_EXO}.\n{e}")
             return
     
-    # 2. Ouvrir un pop-up pour afficher les résultats
     popup = tk.Toplevel(root)
     popup.title(f"Logs du {selected_date_iso}")
     popup.geometry("400x300")
@@ -442,7 +626,6 @@ def show_sessions_for_date(selected_date_iso):
     popup.resizable(False, False)
     popup.transient(root); popup.grab_set()
 
-    # Cadre avec scrollbar
     text_frame = tk.Frame(popup, bg=FRAME_BG, padx=10, pady=10)
     text_frame.pack(fill="both", expand=True)
     scrollbar = tk.Scrollbar(text_frame)
@@ -451,7 +634,6 @@ def show_sessions_for_date(selected_date_iso):
     info_text.pack(fill="both", expand=True)
     scrollbar.config(command=info_text.yview)
 
-    # Définir les styles
     info_text.tag_configure("title", font=("Helvetica", 12, "bold"), spacing3=5)
     info_text.tag_configure("info", font=FONT_LABEL, lmargin1=10)
 
@@ -466,23 +648,21 @@ def show_sessions_for_date(selected_date_iso):
     
 def open_calendar_popup():
     """
-    MODIFIÉE: Ouvre un calendrier et marque les jours
+    Ouvre un calendrier et marque les jours
     en lisant Personne_Exo.csv (via get_all_logged_dates).
     """
     popup = tk.Toplevel(root)
-    popup.title("Calendrier des Logs") # Titre mis à jour
+    popup.title("Calendrier des Logs") 
     popup.geometry("400x400")
     popup.configure(bg=FRAME_BG)
     popup.resizable(False, False)
     popup.transient(root); popup.grab_set()
 
-    # --- NOUVELLE LOGIQUE: Lire les dates depuis Personne_Exo.csv ---
     all_dates_logged = get_all_logged_dates()
     
-    display_date = date.today() # Par défaut à aujourd'hui
+    display_date = date.today()
     if all_dates_logged:
         try:
-            # Tenter de trouver la date la plus récente
             latest_date_str = max(all_dates_logged)
             display_date = datetime.strptime(latest_date_str, '%Y-%m-%d').date()
         except Exception as e:
@@ -512,29 +692,25 @@ def open_calendar_popup():
     )
     cal.pack(fill="both", expand=True, padx=10, pady=10)
 
-    # --- NOUVELLE LOGIQUE: Marquer les jours ---
-    cal.tag_config('log', background=BUTTON_BG, foreground='white') # J'ai renommé le tag 'log'
+    cal.tag_config('log', background=BUTTON_BG, foreground='white') 
     
     for date_str in all_dates_logged:
         try:
             date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
-            cal.calevent_create(date_obj, 'Log', 'log') # Utilise le tag 'log'
+            cal.calevent_create(date_obj, 'Log', 'log') 
         except ValueError:
-            continue # Ignorer les dates invalides
+            continue 
 
     def on_date_clicked(event):
-        """Fonction interne appelée par le clic sur le calendrier"""
         selected_date_iso = cal.get_date() 
-        show_sessions_for_date(selected_date_iso) # Appelle la nouvelle fonction
+        show_sessions_for_date(selected_date_iso) 
 
-    # Lier l'événement de sélection d'un jour
     cal.bind("<<CalendarSelected>>", on_date_clicked)
 
 
 # --- FENÊTRE PRINCIPALE ---
 root = tk.Tk()
 root.title("Journal d'Entraînement")
-# Réduction de la hauteur maintenant que le bouton est parti
 root.geometry("600x740") 
 root.configure(bg=BG_COLOR)
 root.resizable(False, False)
@@ -546,7 +722,7 @@ main_frame.pack(fill="both", expand=True)
 header_frame = tk.Frame(main_frame, bg=BG_COLOR)
 header_frame.pack(fill="x", anchor="n")
 calendar_btn = tk.Button(
-    header_frame, text="rechercher une ancienne séance", command=open_calendar_popup,
+    header_frame, text="Recherche une séance", command=open_calendar_popup,
     font=FONT_LINK, fg=TEXT_COLOR, bg=BG_COLOR, relief="flat", borderwidth=0,
     activeforeground=BUTTON_BG, activebackground=BG_COLOR
 )
@@ -563,12 +739,29 @@ session_combobox = ttk.Combobox(
 session_combobox.pack(fill="x", ipady=5)
 session_combobox.bind("<<ComboboxSelected>>", on_session_selected)
 
-# --- 2. DÉTAILS DE LA SÉANCE ---
+# --- 2. DÉTAILS DE LA SÉANCE (MODIFIÉ) ---
 notes_frame = ttk.LabelFrame(main_frame, text="Détails de la Séance (sélectionnez une séance)", padding=15)
 notes_frame.pack(fill="x", pady=20)
-date_var = tk.StringVar(value="Date de la séance : N/A")
-date_label = tk.Label(notes_frame, textvariable=date_var, font=FONT_LABEL, bg=FRAME_BG, fg=TEXT_COLOR)
-date_label.pack(anchor="w")
+
+# --- NOUVEAU CADRE POUR LA DATE ---
+date_picker_frame = tk.Frame(notes_frame, bg=FRAME_BG)
+date_picker_frame.pack(fill="x", anchor="w")
+
+date_label = tk.Label(date_picker_frame, text="Date de l'entraînement :", font=FONT_LABEL, bg=FRAME_BG, fg=TEXT_COLOR)
+date_label.pack(side="left", padx=(0, 5))
+
+training_date_var = tk.StringVar()
+training_date_entry = tk.Entry(date_picker_frame, textvariable=training_date_var, font=FONT_LABEL, relief="flat", state="disabled", width=12)
+training_date_entry.pack(side="left", padx=5)
+
+date_picker_btn = tk.Button(
+    date_picker_frame, text="📅", command=open_date_picker_for_note, font=FONT_LABEL,
+    relief="flat", bg=FRAME_BG, fg=TEXT_COLOR, activebackground=FRAME_BG, 
+    activeforeground=BUTTON_BG, borderwidth=0, state="disabled"
+)
+date_picker_btn.pack(side="left")
+# --- FIN DU NOUVEAU CADRE ---
+
 notes_label = tk.Label(notes_frame, text="Notes personnelles :", font=FONT_LABEL, bg=FRAME_BG, fg=TEXT_COLOR)
 notes_label.pack(anchor="w", pady=(10, 5))
 notes_text = tk.Text(notes_frame, height=6, font=FONT_LABEL, relief="flat", bg=BG_COLOR, state="disabled")
@@ -581,7 +774,7 @@ save_notes_btn.pack(anchor="e", pady=(10, 0))
 
 # --- 3. LOG D'EXERCICE ---
 log_frame = ttk.LabelFrame(main_frame, text="Log d'Exercice (sélectionnez une séance)", padding=15)
-log_frame.pack(fill="x", pady=(20, 0)) # Ajout d'un Pady top pour l'espace
+log_frame.pack(fill="x", pady=(20, 0)) 
 log_exo_label = tk.Label(log_frame, text="Choisir un exercice :", font=FONT_LABEL, bg=FRAME_BG, fg=TEXT_COLOR)
 log_exo_label.pack(anchor="w")
 exercise_var = tk.StringVar()
@@ -610,7 +803,7 @@ reps_entry = tk.Entry(
     font=FONT_LABEL, 
     relief="flat", 
     state="disabled", 
-    readonlybackground=BG_COLOR # Couleur de fond quand 'readonly'
+    readonlybackground=BG_COLOR 
 )
 reps_entry.grid(row=1, column=1, sticky="ew", padx=(10, 0))
 
@@ -621,8 +814,6 @@ save_log_btn = tk.Button(
 save_log_btn.pack(anchor="e", pady=(20, 0))
 
 # --- 4. BOUTON DE CRÉATION DE SÉANCE (SUPPRIMÉ) ---
-# Le séparateur et le bouton ont été retirés ici.
-
 
 # --- LANCEMENT DE l'APP ---
 root.mainloop()
