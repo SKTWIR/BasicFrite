@@ -59,10 +59,10 @@ def load_user_progress(user_id):
     """
     progress = {}
 
-    if user_id is None:
+    if not user_id:
         return progress
 
-    # Garantir comparação por string (CSV sempre lê como texto)
+    # Converter para string porque o CSV sempre lê texto
     user_id_str = str(user_id)
 
     if not os.path.exists(PROGRESS_CSV_FILE):
@@ -74,13 +74,8 @@ def load_user_progress(user_id):
             for row in reader:
                 if row.get('id_user') != user_id_str:
                     continue
+                # ... aqui continua igual: pegar exercice, date, poids ...
 
-                exercice = row.get('exercice', 'Inconnu')
-                date_str = row.get('date', '')
-                poids_str = row.get('poids', '')
-
-                if not date_str or not poids_str:
-                    continue
 
                 # Conversion de la date (on tente deux formats courants)
                 date_obj = None
@@ -119,19 +114,8 @@ def show_progress_window(root_window, user_data):
     """
     global current_editing_user_id
 
-    user_id = None
-
-    # 1) Tenta pegar a partir de user_data (vindo du main_menu)
-    if isinstance(user_data, dict):
-        for key in ("id_user", "id", "user_id"):
-            val = user_data.get(key)
-            if val not in (None, ""):
-                user_id = val
-                break
-
-    # 2) Se ainda não tiver, cai pro global usado no profil
-    if not user_id and current_editing_user_id:
-        user_id = current_editing_user_id
+    # Usar SOMENTE o ID global que foi salvo ao abrir o profil
+    user_id = current_editing_user_id
 
     if not user_id:
         messagebox.showerror(
@@ -149,7 +133,7 @@ def show_progress_window(root_window, user_data):
         )
         return
 
-    # --- A partir daqui, a parte visual fica igual ao que eu já tinha te mandado ---
+    # --- Interface graphique ---
 
     win = tk.Toplevel(root_window)
     win.title("📈 Progression de l'utilisateur")
@@ -219,6 +203,7 @@ def show_progress_window(root_window, user_data):
 
     selected_exo.trace_add("write", on_exercice_change)
     plot_exercise(selected_exo.get())
+
 
 
 # --- VARIABLES GLOBALES ---
@@ -316,9 +301,16 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
     """
     Lance l'interface du profil utilisateur dans la fenêtre fournie.
     """
-    global entry_first_name, entry_last_name, entry_email, entry_age, entry_weight, entry_height, entry_nb_seances, current_editing_user_id
+    global entry_first_name, entry_last_name, entry_email, entry_age, entry_weight, entry_height, current_editing_user_id
 
-    current_editing_user_id = user_data.get('id_user')
+    # Garantir que o ID está salvo como string (ex: "1", "2", "142")
+    current_editing_user_id = str(
+        user_data.get('id_user')
+        or user_data.get('id')
+        or user_data.get('user_id')
+        or ""
+    )
+
     
     # 1. Nettoyer l'écran précédent
     for widget in root_window.winfo_children():
