@@ -5,14 +5,7 @@ from tkinter import messagebox
 import sys
 import os 
 import csv 
-
-# Notifications générales stockées en mémoire (simulation de base de données)
-NOTIFICATIONS = []
-
-def add_notification(title: str, message: str):
-    """Ajoute une notification dans la liste globale (simulé)."""
-    NOTIFICATIONS.append({"title": title, "message": message})
-
+import sys
 # Import des autres écrans
 import connection_initial
 import us_15
@@ -20,10 +13,19 @@ import us_31
 import app_gui
 import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
-import US_11_9 # Module de recherche d'exercices
-import US_35_AjoutNouvelExo # Module d'ajout d'exercices
+import US_11_9 # Module de Recherche Exercice
+import US_35_AjoutNouvelExo # <-- NOUVEL IMPORT (fusionné)
+import us_32
 import us_journal # <-- Le journal qui contient la fonction run_training_journal
 
+
+
+# Notifications générales stockées en mémoire (simulation de base de données)
+NOTIFICATIONS = []
+
+def add_notification(title: str, message: str):
+    """Ajoute une notification dans la liste globale (simulé)."""
+    NOTIFICATIONS.append({"title": title, "message": message})
 
 # --- Thème (Fonctions inchangées) ---
 IS_DARK_MODE = False
@@ -281,11 +283,13 @@ def switch_to_menu(user_data):
 
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
-        ("ℹ️ Mon Profil", switch_to_profile), 
-        ("📅 VOIR/LOGUER SÉANCES", launch_training_journal), # <-- MODIFIÉ
+        ("ℹ️ Mon Profil", switch_to_profile),
+        ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
-        ("🔍 Recherche Exercice", switch_to_exercise_search), 
+        ("🔍 Recherche Exercice", switch_to_exercise_search),  # você já tem
+        ("💡 Exercice alternatif", lambda: us_32.run_alternative_exercise_screen(root, lambda: switch_to_menu(current_user_data))),
     ]
+
 
     for text, command in boutons:
         btn = tk.Button(
