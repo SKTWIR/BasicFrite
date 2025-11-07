@@ -1,18 +1,10 @@
 # Fichier : main_menu.py (Fusionné et Corrigé)
-
 import tkinter as tk
 from tkinter import messagebox
 import sys
 import os 
 import csv 
-
-# Notifications générales stockées en mémoire (simulation de base de données)
-NOTIFICATIONS = []
-
-def add_notification(title: str, message: str):
-    """Ajoute une notification dans la liste globale (simulé)."""
-    NOTIFICATIONS.append({"title": title, "message": message})
-
+import sys
 # Import des autres écrans
 import connection_initial
 import us_15
@@ -22,6 +14,49 @@ import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
 import US_11_9 # Module de Recherche Exercice
 import US_35_AjoutNouvelExo # <-- NOUVEL IMPORT (fusionné)
+
+# Notifications générales stockées en mémoire (simulation de base de données)
+NOTIFICATIONS = []
+
+def add_notification(title: str, message: str):
+    """Ajoute une notification dans la liste globale (simulé)."""
+    NOTIFICATIONS.append({"title": title, "message": message})
+
+# --- Thème clair / sombre (US 27) ---
+IS_DARK_MODE = False  # False = clair, True = sombre
+
+def get_theme_colors():
+    """
+    Retourne un dictionnaire avec les couleurs du thème actuel.
+    """
+    if IS_DARK_MODE:
+        return {
+            "BG_COLOR": "#000000",   # fond noir
+            "BUTTON_BG": "#333333",  # boutons gris foncé
+            "BUTTON_FG": "#FFFFFF",  # texte des boutons blanc
+            "TEXT_COLOR": "#FFFFFF"  # texte principal blanc
+        }
+    else:
+        return {
+            "BG_COLOR": "#ECF0F1",   # fond gris clair (comme avant)
+            "BUTTON_BG": "#2980B9",  # bleu (comme avant)
+            "BUTTON_FG": "#FFFFFF",  # texte des boutons blanc
+            "TEXT_COLOR": "#17202A"  # texte principal foncé
+        }
+
+def toggle_theme():
+    """
+    Inverse le thème (clair/sombre) et recharge le menu principal.
+    """
+    global IS_DARK_MODE
+    IS_DARK_MODE = not IS_DARK_MODE
+
+    if current_user_data:
+        switch_to_menu(current_user_data)
+    else:
+        # Si pour une raison quelconque il n'y a pas d'utilisateur,
+        # on renvoie un dict vide juste pour éviter les erreurs.
+        switch_to_menu({})
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -92,8 +127,10 @@ def open_chat_window():
     chat = tk.Toplevel(root)
     chat.title("💬 Chat - Notifications")
     chat.geometry("450x400")
-    BG_COLOR = "#ECF0F1"
-    TEXT_COLOR = "#17202A"
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    TEXT_COLOR = theme["TEXT_COLOR"]
+
     chat.configure(bg=BG_COLOR)
     tk.Label(
         chat, text="💬 Messages de l'administrateur", font=("Arial", 14, "bold"),
@@ -134,9 +171,10 @@ def open_chat_window():
 
 def open_admin_notification_window():
     # ... (La fonction open_admin_notification_window reste inchangée) ...
-    BG_COLOR = "#ECF0F1"
-    BTN_PRIMARY = "#2980B9"
-    BTN_PRIMARY_ACTIVE = "#1F618D"
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    BTN_PRIMARY = theme["BUTTON_BG"]
+    BTN_PRIMARY_ACTIVE = "#1F618D"  
     win = tk.Toplevel(root)
     win.title("📢 Envoyer une notification")
     win.geometry("500x380")
@@ -225,11 +263,13 @@ def switch_to_menu(user_data):
     for widget in root.winfo_children():
         widget.destroy()
 
-    BG_COLOR = "#ECF0F1"
-    BUTTON_BG = "#2980B9"
-    BUTTON_FG = "#FFFFFF"
+    # --- couleurs selon le thème actuel ---
+    theme = get_theme_colors()
+    BG_COLOR = theme["BG_COLOR"]
+    BUTTON_BG = theme["BUTTON_BG"]
+    BUTTON_FG = theme["BUTTON_FG"]
+    TEXT_COLOR = theme["TEXT_COLOR"]
     FONT_BUTTON = ("Arial", 12, "bold")
-    TEXT_COLOR = "#17202A"
 
     root.configure(bg=BG_COLOR)
 
@@ -283,6 +323,22 @@ def switch_to_menu(user_data):
               width=25, 
               height=1,
               relief="flat").pack(pady=8)
+    
+    # 🎨 Thème clair / sombre (US 27)
+    tk.Button(
+        button_frame,
+        text="🎨 Thème clair / sombre",
+        command=toggle_theme,
+        font=FONT_BUTTON,
+        bg=BUTTON_BG,
+        fg=BUTTON_FG,
+        width=25,
+        height=1,
+        relief="flat",
+        bd=0,
+        activebackground="#1F618D"
+    ).pack(pady=8)
+
     
     # Bouton Défi Finisher
     challenge_button = tk.Button(
