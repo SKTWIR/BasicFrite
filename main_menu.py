@@ -8,7 +8,8 @@ import sys
 import connection_initial 
 import us_15        
 import us_31        
-import app_gui      
+import app_gui
+import us_39_RechercheUserAndStatutAdmin   
 
 # --- Variable Globale pour stocker l'utilisateur connecté ---
 current_user_data = None
@@ -149,7 +150,7 @@ def run_admin_menu():
     
     # Boutons de Fonctionnalités Administrateur (5 boutons vides)
     boutons_admin = [
-        ("👥 Gérer Utilisateurs", lambda: messagebox.showinfo("Admin", "Fonctionnalité Gérer Utilisateurs (vide)")), 
+        ("👥 Gérer Utilisateurs", lambda: us_39_RechercheUserAndStatutAdmin.run_user_management(root, run_admin_menu)), 
         ("📝 Gérer Contenu", lambda: messagebox.showinfo("Admin", "Fonctionnalité Gérer Contenu (vide)")),
         ("📊 Statistiques", lambda: messagebox.showinfo("Admin", "Fonctionnalité Statistiques (vide)")),
         ("🛠️ Outil #4 (vide)", lambda: messagebox.showinfo("Admin", "Fonctionnalité Outil #4 (vide)")),
