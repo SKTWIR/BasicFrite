@@ -3,8 +3,21 @@ from tkinter import ttk, filedialog, messagebox
 import csv
 import os
 
-CSV_FILE = os.path.join(os.path.dirname(__file__), "Personne_Exo.csv")
 
+# --- CONSTANTE CSV ---
+USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+CSV_FILE = os.path.join(os.path.dirname(__file__), "Personne_Exo.csv") 
+
+def get_user_id_by_pseudo(pseudo):
+    try:
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row['pseudo'] == pseudo:
+                    return row['id_user']
+    except Exception:
+        pass
+    return None
 
 def load_user_entrainements(user_id):
     data = []
@@ -23,12 +36,22 @@ def load_user_entrainements(user_id):
     return data
 
 
-def run_export_entrainement_screen(root_window, switch_back_callback, user_id):
+def run_export_entrainement_screen(root_window, switch_back_callback, user_id=None, pseudo=None):
     for w in root_window.winfo_children():
         w.destroy()
     root_window.title("⬇️ Export Entrainement")
     root_window.geometry("900x500")
     root_window.resizable(False, False)
+
+    # Priorité à l'id_user transmis
+    if not user_id:
+        # Si id_user non fourni, on tente de le retrouver via le pseudo
+        if pseudo:
+            user_id = get_user_id_by_pseudo(pseudo)
+        if not user_id:
+            msg = f"Impossible de déterminer l'utilisateur connecté. Aucun id_user transmis. Pseudo transmis : {pseudo if pseudo else 'Aucun'}"
+            messagebox.showerror("Erreur", msg)
+            return
 
     entrainements = load_user_entrainements(user_id)
 
@@ -74,6 +97,9 @@ def run_export_entrainement_screen(root_window, switch_back_callback, user_id):
             except Exception as e:
                 messagebox.showerror("Erreur export", str(e))
 
+    # Cadre des boutons d'action
+    btn_frame = tk.Frame(root_window)
+    btn_frame.pack(fill="x", padx=12, pady=(6,12))
     # Bas: boutons export et retour (toujours visibles en bas)
     bottom_frame = tk.Frame(root_window)
     bottom_frame.pack(side="bottom", fill="x", pady=10)
