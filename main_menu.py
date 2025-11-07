@@ -22,45 +22,81 @@ import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
 import US_11_9 # Module de recherche d'exercices
 import US_35_AjoutNouvelExo # Module d'ajout d'exercices
-import us_journal # <-- Le journal qui contient la fonction run_training_journal
+import US_21_Export_Entrainement
+import us_journal # Le journal (ancien us_20)
 
+# --- Thème clair / sombre (US 27) ---
+IS_DARK_MODE = False  # False = clair, True = sombre
 
-# --- Thème (Fonctions inchangées) ---
-IS_DARK_MODE = False
 def get_theme_colors():
+    """
+    Retourne un dictionnaire avec les couleurs du thème actuel.
+    """
     if IS_DARK_MODE:
         return {
-            "BG_COLOR": "#2C3E50", "FRAME_BG": "#34495E", "BUTTON_BG": "#5D6D7E",
-            "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#ECF0F1"
+            "BG_COLOR": "#2C3E50",   # Fond sombre
+            "FRAME_BG": "#34495E",  # Cadre plus clair
+            "BUTTON_BG": "#5D6D7E",  # Boutons gris/bleu
+            "BUTTON_FG": "#FFFFFF",  # Texte des boutons blanc
+            "TEXT_COLOR": "#ECF0F1"  # Texte principal clair
         }
     else:
         return {
-            "BG_COLOR": "#ECF0F1", "FRAME_BG": "#FFFFFF", "BUTTON_BG": "#2980B9",
-            "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#17202A"
+            "BG_COLOR": "#ECF0F1",   # Fond gris clair (défaut)
+            "FRAME_BG": "#FFFFFF",   # Cadre blanc
+            "BUTTON_BG": "#2980B9",   # Bleu (défaut)
+            "BUTTON_FG": "#FFFFFF",   # Texte des boutons blanc
+            "TEXT_COLOR": "#17202A"   # Texte principal foncé
         }
 
 def toggle_theme():
+    """
+    Inverse le thème (clair/sombre) et recharge le menu principal.
+    """
     global IS_DARK_MODE
     IS_DARK_MODE = not IS_DARK_MODE
+
+    # Recharge le menu actuel (utilisateur ou admin) pour appliquer le thème
     if current_user_data:
         if current_user_data.get('is_admin', 'False').lower() == 'true':
             run_admin_menu()
         else:
             switch_to_menu(current_user_data)
     else:
+        # Si personne n'est connecté (ne devrait pas arriver ici, mais par sécurité)
         switch_to_login()
 
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+
+# --- Variable Globale pour stocker l'utilisateur connecté ---
 current_user_data = None
+
+# --- Variable pour stocker l'ID utilisateur connecté ---
+USER_ID = None  # Sera mis à jour automatiquement après connexion
+
+# --- Fonction utilitaire pour récupérer l'id_user (CORRIGÉE) ---
+def get_user_id_by_pseudo(pseudo):
+    """Récupère l'ID utilisateur en gérant l'encodage BOM."""
+    try:
+        # CORRECTION : Utilisation de 'utf-8-sig' pour ignorer le BOM
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row['pseudo'] == pseudo:
+                    return row['id_user']
+    except Exception as e:
+        print(f"Erreur get_user_id_by_pseudo: {e}")
+        pass
+    return None
 
 # --- Fonctions d'Action/Simulations ---
 
 def show_user_info():
     messagebox.showinfo("Info", "Utilisez 'Mon Profil' pour voir vos informations.")
 
-# --- NOUVELLE FONCTION DE LOGGING (Ancienne view_sessions) ---
+# --- FONCTION 'VOIR MES SÉANCES' (remplacée par launch_training_journal) ---
 def launch_training_journal():
     """
     Lance l'interface du Journal d'Entraînement (us_journal.py) 
@@ -94,7 +130,7 @@ def delete_account():
         fieldnames = []
         found = False
         try:
-            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 fieldnames = reader.fieldnames 
                 for row in reader:
@@ -121,7 +157,6 @@ def delete_account():
 
 
 # --- NOUVELLE FONCTIONNALITÉ : Chat utilisateur (Notifications) ---
-
 def open_chat_window():
     # ... (La fonction open_chat_window reste inchangée) ...
     chat = tk.Toplevel(root)
@@ -248,14 +283,34 @@ def switch_to_exercise_search():
     """Lance l'écran de recherche d'exercices (US_11_9)."""
     US_11_9.run_exercise_search_screen(root, lambda: switch_to_menu(current_user_data))
 
+def switch_to_export_entrainement():
+    """Lance l'écran d'export d'entraînement (US_21_Export_Entrainement)."""
+    # CORRECTION : Utilise un lambda pour passer current_user_data au retour
+    US_21_Export_Entrainement.run_export_entrainement_screen(
+        root, 
+        lambda: switch_to_menu(current_user_data), 
+        USER_ID
+    )
 
 def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
-    global root, current_user_data
+    global root, current_user_data, USER_ID
     current_user_data = user_data 
+    
+    # S'assure que USER_ID est défini pour US_21
+    if current_user_data and (not USER_ID or USER_ID != current_user_data.get('id_user')):
+        USER_ID = current_user_data.get('id_user')
+        if not USER_ID:
+            USER_ID = get_user_id_by_pseudo(current_user_data.get('pseudo'))
+            if USER_ID:
+                current_user_data['id_user'] = USER_ID
+
     user_first_name = current_user_data.get('prénom', 'sportif')
     
-    root.geometry("450x620") 
+    # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
+    root.geometry("450x660") # Augmenté pour le bouton Thème ET le bouton Export
+    # --- FIN CORRECTION ---
+    
     root.resizable(False, False)
 
     for widget in root.winfo_children():
@@ -282,9 +337,10 @@ def switch_to_menu(user_data):
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
         ("ℹ️ Mon Profil", switch_to_profile), 
-        ("📅 Voir nos séances", launch_training_journal), # <-- MODIFIÉ
-        ("🗓️ Jours/Semaine et Objectif", switch_to_planning),
+        ("📅 VOIR/LOGUER SÉANCES", launch_training_journal), # <-- MODIFIÉ
+        ("🗓️ Modifier Jours/Semaine", switch_to_planning),
         ("🔍 Recherche Exercice", switch_to_exercise_search), 
+        ("⬇️ Export Entrainement", switch_to_export_entrainement), # <-- AJOUTÉ
     ]
 
     for text, command in boutons:
@@ -353,7 +409,7 @@ def switch_to_menu(user_data):
 
 
 def run_admin_menu():
-    # ... (La fonction run_admin_menu reste inchangée) ...
+    """Crée et affiche l'interface Administrateur."""
     for widget in root.winfo_children():
         widget.destroy()
     theme = get_theme_colors()
