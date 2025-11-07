@@ -11,4 +11,3 @@ id_user;pseudo;nom;prénom;age;poids;taille;motdepasse;email;is_admin;statut
 9;user_9_train;Nom_9;Prenom_9;21;95;1.74;mdp9;user9@trainingapp.com;False;
 10;user_10_train;Nom_10;Prenom_10;48;91;1.78;mdp10;user10@trainingapp.com;False;
 142;cheffounet;Hugo;MIRANDA;30;120;1.20;mdp;test@test.fr;False;
-143;etsetst;testes;testse;80;80;1.11;olol;azafzfz@gzergr.fr;False;
