@@ -52,19 +52,18 @@ class UserProfile:
                  raise ValueError("Le nombre de séances doit être un entier entre 0 et 7.")
         self.nb_seances = nb_seances
 
-def load_user_progress(user_id: str):
+def load_user_progress(user_id):
     """
     Charge les données de progression d'un utilisateur spécifique
     depuis PROGRESS_CSV_FILE.
-    
-    Retourne un dict :
-    {
-        "Développé couché": [(date_obj, poids_float), ...],
-        "Squat": [(date_obj, poids_float), ...],
-        ...
-    }
     """
     progress = {}
+
+    if user_id is None:
+        return progress
+
+    # Garantir comparação por string (CSV sempre lê como texto)
+    user_id_str = str(user_id)
 
     if not os.path.exists(PROGRESS_CSV_FILE):
         return progress  # pas de fichier = pas de données
@@ -73,7 +72,7 @@ def load_user_progress(user_id: str):
         with open(PROGRESS_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
-                if row.get('id_user') != user_id:
+                if row.get('id_user') != user_id_str:
                     continue
 
                 exercice = row.get('exercice', 'Inconnu')
@@ -118,17 +117,40 @@ def show_progress_window(root_window, user_data):
     Affiche une fenêtre avec un graphique de progression pour un exercice choisi.
     USER STORY 17.
     """
-    user_id = user_data.get('id_user')
+    global current_editing_user_id
+
+    user_id = None
+
+    # 1) Tenta pegar a partir de user_data (vindo du main_menu)
+    if isinstance(user_data, dict):
+        for key in ("id_user", "id", "user_id"):
+            val = user_data.get(key)
+            if val not in (None, ""):
+                user_id = val
+                break
+
+    # 2) Se ainda não tiver, cai pro global usado no profil
+    if not user_id and current_editing_user_id:
+        user_id = current_editing_user_id
+
     if not user_id:
-        messagebox.showerror("Erreur", "ID utilisateur introuvable pour afficher la progression.")
+        messagebox.showerror(
+            "Erreur",
+            "ID utilisateur introuvable pour afficher la progression."
+        )
         return
 
+    # Carrega os dados de progressão desse usuário
     progress = load_user_progress(user_id)
     if not progress:
-        messagebox.showinfo("Progression", "Aucune donnée de progression trouvée pour cet utilisateur.")
+        messagebox.showinfo(
+            "Progression",
+            "Aucune donnée de progression trouvée pour cet utilisateur."
+        )
         return
 
-    # Fenêtre de progression
+    # --- A partir daqui, a parte visual fica igual ao que eu já tinha te mandado ---
+
     win = tk.Toplevel(root_window)
     win.title("📈 Progression de l'utilisateur")
     win.geometry("700x500")
@@ -136,7 +158,6 @@ def show_progress_window(root_window, user_data):
     BG_COLOR = "#D6EAF8"
     win.configure(bg=BG_COLOR)
 
-    # Titre
     full_name = f"{user_data.get('prénom', '')} {user_data.get('nom', '')}".strip()
     tk.Label(
         win,
@@ -145,7 +166,6 @@ def show_progress_window(root_window, user_data):
         bg=BG_COLOR
     ).pack(pady=10)
 
-    # Liste des exercices disponibles
     exercices = list(progress.keys())
     selected_exo = tk.StringVar(value=exercices[0])
 
@@ -163,12 +183,10 @@ def show_progress_window(root_window, user_data):
     exo_menu.config(font=("Helvetica", 10))
     exo_menu.pack(side="left", padx=5)
 
-    # Frame pour le graphique
     graph_frame = tk.Frame(win, bg=BG_COLOR)
     graph_frame.pack(expand=True, fill="both", padx=10, pady=10)
 
     def plot_exercise(exercice_name):
-        # Effacer ancien graphique
         for widget in graph_frame.winfo_children():
             widget.destroy()
 
@@ -196,13 +214,10 @@ def show_progress_window(root_window, user_data):
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
-    # Quand o usuário troca de exercício no menu
     def on_exercice_change(*args):
         plot_exercise(selected_exo.get())
 
     selected_exo.trace_add("write", on_exercice_change)
-
-    # Premier affichage
     plot_exercise(selected_exo.get())
 
 
