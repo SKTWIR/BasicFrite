@@ -1,16 +1,26 @@
-# Fichier : us_15.py
+# Fichier : us_15.py (Planification et Gestion Objectif/Séances avec Sauvegarde CSV)
 
 import tkinter as tk
 from tkinter import messagebox
-import sys # Ajout de sys pour le bloc de test
+from tkinter import ttk  # Nécessaire pour la Combobox
+import sys
+import os
+import csv
+
+# --- CONSTANTES ---
+USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+OBJECTIFS = ["Force", "Hypertrophie", "Endurance"]
+
+# Définition complète des en-têtes (13 CHAMPS)
+CSV_FIELDS = [
+    "id_user", "pseudo", "nom", "prénom", "age", "poids", "taille", 
+    "motdepasse", "email", "is_admin", "statut", "nbentrainementsemaine", "objectif"
+]
 
 # --- 🧠 Logique d'adaptation de la répartition des groupes musculaires ---
 
 def obtenir_repartition_musculaire(nb_seances: int) -> list:
-    """
-    Retourne la liste des groupes musculaires/types de séances par jour
-    en fonction du nombre total de séances hebdomadaires (de 1 à 6).
-    """
+    """Retourne la répartition suggérée en fonction du nombre de séances."""
     repartitions = {
         1: ["Full Body"],
         2: ["Haut du Corps", "Bas du Corps"], 
@@ -21,37 +31,157 @@ def obtenir_repartition_musculaire(nb_seances: int) -> list:
     }
     return repartitions.get(nb_seances, ["⚠️ Nombre de séances non géré (Max 6)"])
 
+# --- FONCTIONS CSV (Pour la sauvegarde) ---
+
+def save_planning_and_objective(user_id, nb_seances_str, objectif_str, switch_to_menu_callback, current_data):
+    """Met à jour les champs 'nbentrainementsemaine' et 'objectif' dans le CSV."""
+    
+    try:
+        # 1. Validation de base
+        nb_seances = int(nb_seances_str)
+        if not 0 <= nb_seances <= 7:
+            messagebox.showerror("Erreur", "Le nombre de séances doit être entre 0 et 7.")
+            return
+
+        rows = []
+        updated_row = current_data.copy()
+        found = False
+        
+        # 2. Lecture du CSV
+        try:
+            # --- CORRECTION ENCODAGE ICI ---
+            # Utilisation de 'utf-8-sig' pour gérer le BOM
+            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
+            # --- FIN CORRECTION ---
+                reader = csv.DictReader(f, delimiter=';')
+                fieldnames = reader.fieldnames
+                
+                # Vérification de sécurité (si les en-têtes CSV ne correspondent pas au code)
+                if 'nbentrainementsemaine' not in fieldnames or 'objectif' not in fieldnames:
+                    messagebox.showerror(
+                        "Erreur CSV (En-têtes)", 
+                        "Votre fichier User.csv est obsolète.\n\n"
+                        "Il manque les colonnes ';nbentrainementsemaine;objectif' à la fin de la première ligne de User.csv."
+                    )
+                    return 
+
+                for row in reader:
+                    if row['id_user'] == user_id:
+                        found = True
+                        row['nbentrainementsemaine'] = nb_seances_str
+                        row['objectif'] = objectif_str
+                        updated_row = row.copy() 
+                    rows.append(row)
+                        
+        except Exception as e:
+            messagebox.showerror("Erreur Lecture CSV", f"Erreur (lecture): {e}")
+            return
+    
+        if not found:
+            messagebox.showerror("Erreur", "ID utilisateur non trouvé lors de la lecture.")
+            return
+    
+        # 3. Écriture du CSV complet
+        try:
+            # Utilisation de la liste d'en-têtes complète (CSV_FIELDS)
+            with open(USER_CSV_FILE, mode='w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, delimiter=';')
+                writer.writeheader()
+                writer.writerows(rows)
+                
+            messagebox.showinfo("Succès", "Planification et Objectif mis à jour !")
+            
+            # 4. Retour au menu en passant les données mises à jour
+            switch_to_menu_callback(updated_row) 
+    
+        except ValueError as ve:
+             messagebox.showerror(
+                "Erreur d'écriture (ValueError)", 
+                f"Erreur: {ve}\nAssurez-vous que User.csv a les bons en-têtes."
+             )
+        except Exception as e:
+            messagebox.showerror("Erreur Écriture CSV", f"Erreur (écriture): {e}")
+            return
+    
+    except ValueError:
+        messagebox.showerror("Erreur", "Veuillez entrer un nombre valide pour les séances.")
+    except Exception as e:
+        messagebox.showerror("Erreur CSV", f"Erreur de traitement du fichier: {e}")
+
+
 # --- ⚙️ Fonctions de l'Interface Utilisateur (Tkinter) ---
 
-# --- CORRECTION 1 : Accepter 'user_data' en argument ---
 def run_planning_screen(root_window, switch_to_menu_callback, user_data):
     """
     Crée et affiche l'interface de planification en utilisant la fenêtre root_window.
     """
-    # Nettoyer l'écran précédent
+    # ... (Le reste de l'interface reste inchangé) ...
+    
     for widget in root_window.winfo_children():
         widget.destroy()
+    
+    current_nb_seances = user_data.get('nbentrainementsemaine', '4')
+    current_objectif = user_data.get('objectif', 'Force')
         
-    root_window.title("🏋️ Planificateur de Séances (us_15)")
-    root_window.geometry("400x400") 
+    root_window.title("🏋️ Planificateur de Séances")
+    root_window.geometry("500x550") 
     root_window.resizable(False, False)
 
-    # Variables d'accès local pour les fonctions internes
-    global entry_seances, label_resultat 
+    global entry_seances, label_resultat, combo_objectif 
     
-    # --- Fonction Afficher Répartition (intégrée/adaptée) ---
+    main_frame = tk.Frame(root_window, padx=20, pady=20)
+    main_frame.pack(fill="both", expand=True)
+
+    tk.Label(main_frame, text="Planification Hebdomadaire & Objectifs", font=("Arial", 16, "bold")).pack(pady=(0, 20))
+
+    tk.Label(main_frame, text="1. Nombre de séances par semaine (0-6) :", anchor="w").pack(fill="x", pady=(10, 5))
+    entry_seances = tk.Entry(main_frame, width=5, font=("Arial", 12))
+    entry_seances.insert(0, current_nb_seances) 
+    entry_seances.pack(pady=5)
+    
+    tk.Label(main_frame, text="2. Objectif Principal :", anchor="w").pack(fill="x", pady=(15, 5))
+    objectif_var = tk.StringVar(main_frame)
+    objectif_var.set(current_objectif if current_objectif in OBJECTIFS else OBJECTIFS[0]) 
+    
+    combo_objectif = ttk.Combobox(
+        main_frame,
+        textvariable=objectif_var,
+        values=OBJECTIFS,
+        state="readonly",
+        width=30,
+        font=("Arial", 12)
+    )
+    combo_objectif.pack(pady=5)
+
+    tk.Button(
+        main_frame, 
+        text="💾 Enregistrer la Planification", 
+        command=lambda: (
+            save_planning_and_objective(
+                user_data.get('id_user'), 
+                entry_seances.get(), 
+                objectif_var.get(),
+                switch_to_menu_callback,
+                user_data
+            ),
+            afficher_repartition() 
+        ),
+        bg="#2ECC71", fg="white", font=("Arial", 11, "bold")
+    ).pack(pady=20)
+
+    tk.Label(main_frame, text="3. Répartition Suggérée :", anchor="w", font=("Arial", 11, "underline")).pack(fill="x", pady=(10, 5))
+    
+    label_resultat = tk.Label(main_frame, text="[Cliquez sur Enregistrer pour voir la suggestion]", 
+                              justify=tk.LEFT, padx=10, pady=10)
+    label_resultat.pack(fill="x")
+    
     def afficher_repartition():
-        """Récupère la saisie, calcule la répartition et met à jour l'affichage."""
+        """Récupère la saisie et met à jour l'affichage de la répartition."""
         try:
-            nb_seances_str = entry_seances.get()
-            if not nb_seances_str:
-                raise ValueError("Veuillez entrer un nombre.")
-                
-            nb_seances = int(nb_seances_str)
-            
-            if not 1 <= nb_seances <= 6:
-                messagebox.showwarning("Avertissement", "Veuillez entrer un nombre de séances entre 1 et 6.")
-                return
+            nb_seances = int(entry_seances.get())
+            if not 0 <= nb_seances <= 6: 
+                 label_resultat.config(text="Veuillez choisir entre 1 et 6 séances pour une répartition standard.")
+                 return
 
             planning_semaine = obtenir_repartition_musculaire(nb_seances)
 
@@ -59,56 +189,28 @@ def run_planning_screen(root_window, switch_to_menu_callback, user_data):
             for i, seance in enumerate(planning_semaine):
                 lignes_seances += f"Séance {i+1}: {seance}\n"
 
-            resultat_text = f"**{nb_seances}** séances par semaine :\n\n{lignes_seances.strip()}"
+            resultat_text = f"Objectif: {objectif_var.get()}\nPlanning: {nb_seances} séances\n\n{lignes_seances.strip()}"
             label_resultat.config(text=resultat_text)
             
-        except ValueError as e:
-            messagebox.showerror("Erreur de Saisie", f"Saisie invalide : {e}")
-            label_resultat.config(text="Veuillez entrer un nombre valide.")
+        except ValueError:
+            label_resultat.config(text="Erreur: Entrez un nombre valide pour les séances.")
 
-    # --- Widgets ---
-    # ... (Les widgets Titre, Saisie, Entry, Calculer, Resultat restent inchangés) ...
-    # 1. Titre
-    label_titre = tk.Label(root_window, text="Planification Hebdomadaire", font=("Arial", 16, "bold"))
-    label_titre.pack(pady=15)
-    # 2. Demande de saisie
-    label_saisie = tk.Label(root_window, text="Nombre de séances par semaine (1-6) :", font=("Arial", 10))
-    label_saisie.pack()
-    # 3. Champ de saisie
-    entry_seances = tk.Entry(root_window, width=5, font=("Arial", 12))
-    entry_seances.pack(pady=5)
-    entry_seances.insert(0, "4")
-    # 4. Bouton de calcul/affichage
-    bouton_calculer = tk.Button(root_window, 
-                               text="Afficher la Répartition", 
-                               command=afficher_repartition, 
-                               bg="#4CAF50", fg="white", 
-                               font=("Arial", 11, "bold"))
-    bouton_calculer.pack(pady=10)
-    # 5. Zone d'affichage des résultats
-    label_resultat = tk.Label(root_window, text="Cliquez sur 'Afficher la Répartition' pour commencer.", 
-                              justify=tk.LEFT, 
-                              font=("Arial", 10), 
-                              padx=10, pady=10)
-    label_resultat.pack(pady=15)
+    tk.Button(root_window, 
+              text="⬅️ Retour Menu Principal", 
+              command=lambda: switch_to_menu_callback(user_data), 
+              bg="#f0f0f0", 
+              font=("Arial", 10)).pack(pady=10)
+    
+    if current_nb_seances and current_nb_seances.isdigit() and int(current_nb_seances) > 0:
+        afficher_repartition()
 
 
-    # --- CORRECTION 2 : Modifier la commande du bouton Retour ---
-    bouton_menu = tk.Button(root_window, 
-                           text="⬅️ Retour Menu Principal", 
-                           command=lambda: switch_to_menu_callback(user_data), # <-- Doit passer user_data
-                           bg="#f0f0f0", 
-                           font=("Arial", 10))
-    bouton_menu.pack(pady=20)
-
-
-# Si le fichier est exécuté seul (pour test)
 if __name__ == '__main__':
-    def dummy_menu_callback(data_recue): # <-- Doit accepter l'argument
+    def dummy_menu_callback(data_recue):
         print(f"Retour au Menu! Données: {data_recue}")
         sys.exit()
 
     root = tk.Tk()
-    dummy_data = {'id_user': 'test'} # Données de test
+    dummy_data = {'id_user': '1', 'prénom': 'Test', 'nom': 'User', 'email': 'test@test.com', 'age': '25', 'poids': '70', 'taille': '1.80', 'nbentrainementsemaine': '4', 'objectif': 'Force'}
     run_planning_screen(root, dummy_menu_callback, dummy_data)
     root.mainloop()
