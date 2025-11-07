@@ -228,12 +228,7 @@ def switch_to_exercise_search():
 
 def switch_to_export_entrainement():
     """Lance l'écran d'export d'entraînement (US_21_Export_Entrainement)."""
-    # Correction : on passe l'id_user de l'utilisateur connecté
-    if current_user_data and 'id_user' in current_user_data:
-        US_21_Export_Entrainement.run_export_entrainement_screen(root, switch_to_menu, user_id=current_user_data['id_user'])
-    else:
-        from tkinter import messagebox
-        messagebox.showerror("Erreur", "Impossible de déterminer l'utilisateur connecté pour l'export (id_user manquant).")
+    US_21_Export_Entrainement.run_export_entrainement_screen(root, switch_to_menu, USER_ID)
 
 def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
