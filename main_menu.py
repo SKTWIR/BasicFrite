@@ -1,4 +1,4 @@
-# Fichier : main_menu.py (Fusionné)
+# Fichier : main_menu.py (Fusionné et Corrigé)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -110,7 +110,7 @@ def open_chat_window():
         ).pack(pady=20)
         return
 
-    # Container avec scroll pour la liste de notifications
+    # ... (Le reste du code de open_chat_window reste inchangé) ...
     container = tk.Frame(chat, bg=BG_COLOR)
     container.pack(fill="both", expand=True, padx=10, pady=10)
     canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -123,8 +123,6 @@ def open_chat_window():
     def on_config(event):
         canvas.configure(scrollregion=canvas.bbox("all"))
     scroll_frame.bind("<Configure>", on_config)
-
-    # Carte pour chaque notification
     for notif in NOTIFICATIONS:
         card = tk.Frame(scroll_frame, bg="white", bd=1, relief="solid")
         card.pack(fill="x", pady=5)
@@ -142,6 +140,7 @@ def open_chat_window():
 
 def open_admin_notification_window():
     """Fenêtre pour que l'administrateur envoie une notification générale (USER STORY 40)."""
+    # ... (Le code de open_admin_notification_window reste inchangé) ...
     BG_COLOR = "#ECF0F1"
     BTN_PRIMARY = "#2980B9"
     BTN_PRIMARY_ACTIVE = "#1F618D"
@@ -222,10 +221,12 @@ def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
     global root, current_user_data
     current_user_data = user_data 
-    # Récupère le prénom pour le message de motivation
     user_first_name = current_user_data.get('prénom', 'sportif')
     
-    root.geometry("450x450") # Taille du menu utilisateur
+    # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
+    root.geometry("450x520") # Augmenté de 450 à 520
+    # --- FIN CORRECTION ---
+    
     root.resizable(False, False)
 
     for widget in root.winfo_children():
@@ -312,28 +313,23 @@ def switch_to_menu(user_data):
 
 def run_admin_menu():
     """Crée et affiche l'interface Administrateur."""
+    # ... (Le code de run_admin_menu reste inchangé) ...
     for widget in root.winfo_children():
         widget.destroy()
-
     BG_COLOR = "#ECF0F1"
     BUTTON_BG = "#5D6D7E"
     BUTTON_FG = "#FFFFFF"
     FONT_BUTTON = ("Arial", 12, "bold")
     TEXT_COLOR = "#17202A"
-
     root.geometry("450x450")
     root.title("⚙️ Menu Administrateur")
     root.configure(bg=BG_COLOR)
-
     tk.Label(
         root, text="🔑 Menu Administrateur", font=("Arial", 20, "bold"),
         bg=BG_COLOR, fg="#17202A"
     ).pack(pady=20)
-
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
-
-    # Boutons de Fonctionnalités Administrateur (avec us_39)
     boutons_admin = [
         ("👥 Gérer Utilisateurs",
          lambda: us_39.run_user_management(root, run_admin_menu)),
@@ -345,7 +341,6 @@ def run_admin_menu():
         ("🔗 Outil #5 (vide)",
          lambda: messagebox.showinfo("Admin", "Fonctionnalité Outil #5 (vide)")),
     ]
-
     for text, command in boutons_admin:
         btn = tk.Button(
             button_frame, text=text, command=command, font=FONT_BUTTON,
@@ -353,7 +348,6 @@ def run_admin_menu():
             relief="flat", bd=0, activebackground="#4A5867"
         )
         btn.pack(pady=8)
-        
     tk.Button(root, text="< Retour Menu Utilisateur", 
                command=lambda: switch_to_menu(current_user_data), 
                font=("Arial", 10),
