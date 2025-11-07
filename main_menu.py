@@ -261,6 +261,22 @@ def switch_to_menu(user_data):
             relief="flat", bd=0, activebackground="#1F618D"
         )
         btn.pack(pady=8)
+
+    # --- US 28 : Message de motivation du jour ---
+    btn_motivation = tk.Button(
+        button_frame,  # 👈 agora segue o padrão: dentro do frame dos botões
+        text="🔥 Message de motivation",
+        command=lambda: us_28.show_daily_motivation(root, user_first_name),
+        font=FONT_BUTTON,
+        bg=BUTTON_BG,
+        fg=BUTTON_FG,
+        width=25,
+        height=1,
+        relief="flat",
+        bd=0,
+        activebackground="#1F618D"
+    )
+    btn_motivation.pack(pady=8)
         
     # --- AJOUT DU BOUTON MOTIVATION ---
     btn_motivation = tk.Button(
