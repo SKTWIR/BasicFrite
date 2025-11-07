@@ -9,7 +9,8 @@ import csv # Ajouté pour la gestion du CSV
 # Import des autres écrans
 import connection_initial 
 import us_15        
-import us_31        
+import us_31    
+import us_28
 import app_gui      
 
 # --- CONSTANTE CSV ---
@@ -124,6 +125,9 @@ def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur."""
     global root, current_user_data
     current_user_data = user_data 
+    user_first_name = current_user_data.get('prénom', 'sportif')
+
+
     
     root.geometry("450x450") 
     root.resizable(False, False)
@@ -157,6 +161,22 @@ def switch_to_menu(user_data):
                         bg=BUTTON_BG, fg=BUTTON_FG, width=25, height=1, relief="flat", bd=0, 
                         activebackground="#1F618D")
         btn.pack(pady=8)
+
+    # --- US 28 : Message de motivation du jour ---
+    btn_motivation = tk.Button(
+        button_frame,  # 👈 agora segue o padrão: dentro do frame dos botões
+        text="🔥 Message de motivation",
+        command=lambda: us_28.show_daily_motivation(root, user_first_name),
+        font=FONT_BUTTON,
+        bg=BUTTON_BG,
+        fg=BUTTON_FG,
+        width=25,
+        height=1,
+        relief="flat",
+        bd=0,
+        activebackground="#1F618D"
+    )
+    btn_motivation.pack(pady=8)
         
     # Bouton Supprimer le compte (maintenant fonctionnel)
     tk.Button(button_frame, 
