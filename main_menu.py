@@ -18,6 +18,7 @@ import connection_initial
 import us_15
 import us_31
 import app_gui
+import US_11_9_Recherche_Exo
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -242,6 +243,9 @@ def switch_to_admin_menu(user_data):
     current_user_data = user_data
     run_admin_menu()
 
+def switch_to_exercise_search():
+    US_11_9_Recherche_Exo.run_exercise_search_screen(root, switch_to_menu)
+
 def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
     global root, current_user_data
@@ -277,6 +281,7 @@ def switch_to_menu(user_data):
         ("ℹ️ Mon Profil", switch_to_profile), 
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
+        ("🔍 Recherche Exercice", switch_to_exercise_search),
     ]
 
     for text, command in boutons:
