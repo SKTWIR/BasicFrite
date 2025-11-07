@@ -1,4 +1,4 @@
-# Fichier : connection_initial.py (Gestion du statut "bloqué")
+# Fichier : connection_initial.py (Ajout de nbentrainementsemaine)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -20,14 +20,10 @@ LINK_FG = "#2980B9"
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
 # --------------------
 
-# --- FONCTIONS UTILITAIRES CSV ET SÉCURITÉ ---
+# --- FONCTIONS UTILITAIRES CSV ET SÉCURITÉ (Encodage UTF-8) ---
 
 def check_user(pseudo, password):
-    """
-    Vérifie le pseudo/mdp (en texte clair).
-    Retourne le DICTIONNAIRE (row) de l'utilisateur si la connexion réussit.
-    Retourne None si échec.
-    """
+    # ... (Fonction inchangée) ...
     if not os.path.exists(USER_CSV_FILE):
         messagebox.showerror("Erreur Fichier", "Fichier User.csv introuvable.")
         return None
@@ -75,36 +71,40 @@ def does_user_exist(username, email):
 
 def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin_callback):
     
-    # ... (Préparation de la fenêtre, frame, titre, champs... inchangés) ...
-    
+    # ... (Le début de la fonction run_connection_initial reste inchangé) ...
     # ------------------ PRÉPARATION DE LA FENÊTRE ------------------
     for widget in root_window.winfo_children():
         widget.destroy()
+
     root_window.title("Connexion")
     root_window.geometry("600x480") 
     root_window.resizable(False, False)
     root_window.configure(bg=BG_COLOR)
+
     frame = tk.Frame(root_window, bg=BG_COLOR)
     frame.pack(expand=True, fill="both", padx=40, pady=40)
+
     lbl_title = tk.Label(frame, text="🏋️ Connexion à votre espace", font=("Segoe UI", 16, "bold"), bg=BG_COLOR)
     lbl_title.pack(pady=(0, 25))
+
     lbl_identifiant = tk.Label(frame, text="Identifiant (pseudo) :", bg=BG_COLOR, font=("Segoe UI", 12))
     lbl_identifiant.pack(anchor="w")
     entry_identifiant = tk.Entry(frame, font=("Segoe UI", 11))
     entry_identifiant.pack(fill="x", pady=(0, 15))
+
     lbl_mdp = tk.Label(frame, text="Mot de passe :", bg=BG_COLOR, font=("Segoe UI", 12))
     lbl_mdp.pack(anchor="w")
     entry_mdp = tk.Entry(frame, show="*", font=("Segoe UI", 11))
     entry_mdp.pack(fill="x", pady=(0, 15))
+
     def on_forgot():
         us_2.run_password_recovery(root_window, lambda: run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin_callback))
+
     btn_forgot = tk.Button(frame, text="Mot de passe oublié ?", bd=0, fg=BTN_PRIMARY, bg=BG_COLOR, 
                            cursor="hand2", font=("Segoe UI", 10, "underline"), activebackground=BG_COLOR,
                            activeforeground=BTN_PRIMARY, command=on_forgot)
     btn_forgot.pack(anchor="e", pady=(0, 20))
 
-
-    # --- MODIFICATION DE LA FONCTION ON_CONNECT ---
     def on_connect():
         identifiant = entry_identifiant.get()
         mdp = entry_mdp.get()
@@ -115,8 +115,6 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
         user_data = check_user(identifiant, mdp)
         
         if user_data: 
-            # 1. Vérification du statut avant de continuer
-            # (Utilisation de .get() pour éviter une erreur si la colonne est vide)
             statut = user_data.get('statut', '').strip().lower()
             
             if statut == 'bloqué':
@@ -124,9 +122,8 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
                     "Compte Bloqué", 
                     "Votre compte a été bloqué par un administrateur.\n\nVeuillez contacter le support pour plus d'informations."
                 )
-                return # Interrompt la connexion
+                return 
             
-            # 2. Si non bloqué, continuer normalement
             messagebox.showinfo("Connexion Réussie", f"Bienvenue, {user_data['pseudo']}!")
             
             if user_data['is_admin'].lower() == 'true':
@@ -135,7 +132,6 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
                  switch_to_menu_callback(user_data)
         else:
              messagebox.showerror("Erreur", "Identifiant ou mot de passe incorrect.")
-    # --- FIN DE LA MODIFICATION ---
 
     btn_connect = tk.Button(frame, text="Se connecter", command=on_connect,
                             font=("Segoe UI", 13, "bold"), bg=BTN_PRIMARY, fg="white", 
@@ -155,12 +151,14 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
     # ------------------ INSCRIPTION (open_inscription_window) ------------------
     
     def open_inscription_window():
-        # ... (Logique d'inscription inchangée) ...
+        """Ouvre une nouvelle fenêtre pour créer un compte (Toplevel)."""
         reg = tk.Toplevel(root_window) 
         reg.title("Inscription")
         reg.geometry("600x480")
         reg.resizable(False, False)
         reg.configure(bg=BG_COLOR)
+
+        # ---- Container avec Canvas + Scrollbar ----
         container = tk.Frame(reg, bg=BG_COLOR)
         container.pack(fill="both", expand=True)
         canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -170,13 +168,17 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
         canvas.pack(side="left", fill="both", expand=True)
         frame_reg = tk.Frame(canvas, bg=BG_COLOR)
         canvas.create_window((0, 0), window=frame_reg, anchor="nw")
+        
         def on_frame_configure(event): canvas.configure(scrollregion=canvas.bbox("all"))
         frame_reg.bind("<Configure>", on_frame_configure)
         def _on_mousewheel(event): canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         frame_reg.bind("<MouseWheel>", _on_mousewheel) 
         canvas.bind_all("<MouseWheel>", _on_mousewheel) 
+        
+        # ------------------ CAMPOS DE CRÉATION DE COMPTE ------------------
         lbl_reg_title = tk.Label(frame_reg, text="Créer un compte", font=("Segoe UI", 16, "bold"), bg=BG_COLOR)
         lbl_reg_title.pack(pady=(20, 20))
+
         fields_data = [
             ("Nom :", "nom", False), ("Prénom :", "prenom", False), ("Nom d'utilisateur :", "username", False), 
             ("Adresse Email :", "email", False), 
@@ -193,30 +195,47 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
             
         def on_create_account():
             data = {key: entry.get() for key, entry in entries.items()}
+            
             required_fields = ['nom', 'prenom', 'username', 'email', 'mdp']
             if not all(data[f] for f in required_fields):
                 messagebox.showerror("Champs requis", "Nom, Prénom, Pseudo, Email et Mot de passe sont requis.", parent=reg)
                 return
+                
             if '@' not in data['email'] or '.' not in data['email']:
                  messagebox.showerror("Email invalide", "Veuillez entrer une adresse email valide.", parent=reg)
                  return
+                 
             if does_user_exist(data['username'], data['email']):
                 messagebox.showerror("Erreur", "Ce nom d'utilisateur ou cet email est déjà utilisé.", parent=reg)
                 return
+
             try:
                 new_id = get_next_user_id()
+                
+                # Création de la ligne (12 éléments, le dernier est le nouveau champ)
                 new_row = [
-                    new_id, data['username'], data['nom'], data['prenom'], 
+                    new_id, 
+                    data['username'], 
+                    data['nom'], 
+                    data['prenom'], 
                     data['age'] if data['age'] else '', 
                     data['poids'] if data['poids'] else '',
                     data['taille'] if data['taille'] else '',
-                    data['mdp'], data['email'], 'False', '' 
+                    data['mdp'], 
+                    data['email'], 
+                    'False', # is_admin
+                    '',      # statut (vide)
+                    '0'      # <-- nbentrainementsemaine (initialisé à 0)
                 ]
+
+                # Écriture dans le CSV
                 with open(USER_CSV_FILE, mode='a', newline='', encoding='utf-8') as f:
                     csv_writer = csv.writer(f, delimiter=';')
                     csv_writer.writerow(new_row)
+                    
                 messagebox.showinfo("Succès", "Compte créé! Veuillez vous connecter.", parent=reg)
                 reg.destroy()
+
             except Exception as e:
                 messagebox.showerror("Erreur d'écriture", f"Impossible d'enregistrer le compte: {e}", parent=reg)
 

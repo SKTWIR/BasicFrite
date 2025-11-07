@@ -20,7 +20,8 @@ import us_31
 import app_gui
 import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
-import US_11_9 # <-- NOUVEL IMPORT (fusionné)
+import US_11_9 # Module de Recherche Exercice
+import US_35_AjoutNouvelExo # <-- NOUVEL IMPORT (fusionné)
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -216,7 +217,7 @@ def switch_to_menu(user_data):
     user_first_name = current_user_data.get('prénom', 'sportif')
     
     # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
-    root.geometry("450x570") # Augmenté pour le nouveau bouton
+    root.geometry("450x570") # Taille pour 5 boutons + extras
     # --- FIN CORRECTION ---
     
     root.resizable(False, False)
@@ -306,26 +307,34 @@ def switch_to_menu(user_data):
 
 def run_admin_menu():
     """Crée et affiche l'interface Administrateur."""
-    # ... (Le code de run_admin_menu reste inchangé) ...
     for widget in root.winfo_children():
         widget.destroy()
+
     BG_COLOR = "#ECF0F1"
     BUTTON_BG = "#5D6D7E"
     BUTTON_FG = "#FFFFFF"
     FONT_BUTTON = ("Arial", 12, "bold")
     TEXT_COLOR = "#17202A"
-    root.geometry("450x450")
+
+    # --- CORRECTION HAUTEUR ADMIN ---
+    root.geometry("450x500") # Augmenté pour 6 boutons
     root.title("⚙️ Menu Administrateur")
     root.configure(bg=BG_COLOR)
+
     tk.Label(
         root, text="🔑 Menu Administrateur", font=("Arial", 20, "bold"),
         bg=BG_COLOR, fg="#17202A"
     ).pack(pady=20)
+
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
+
+    # --- LISTE DES BOUTONS ADMIN FUSIONNÉE ---
     boutons_admin = [
         ("👥 Gérer Utilisateurs",
          lambda: us_39.run_user_management(root, run_admin_menu)),
+        ("➕ Ajout Nouvel Exercice",
+         lambda: US_35_AjoutNouvelExo.run_add_exercise_screen(root, run_admin_menu)),
         ("📝 Gérer Contenu",
          lambda: messagebox.showinfo("Admin", "Fonctionnalité Gérer Contenu (vide)")),
         ("📊 Statistiques",
@@ -334,6 +343,8 @@ def run_admin_menu():
         ("🔗 Outil #5 (vide)",
          lambda: messagebox.showinfo("Admin", "Fonctionnalité Outil #5 (vide)")),
     ]
+    # --- FIN FUSION ---
+
     for text, command in boutons_admin:
         btn = tk.Button(
             button_frame, text=text, command=command, font=FONT_BUTTON,
@@ -341,6 +352,7 @@ def run_admin_menu():
             relief="flat", bd=0, activebackground="#4A5867"
         )
         btn.pack(pady=8)
+        
     tk.Button(root, text="< Retour Menu Utilisateur", 
                command=lambda: switch_to_menu(current_user_data), 
                font=("Arial", 10),
