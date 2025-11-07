@@ -1,4 +1,4 @@
-id_user;pseudo;nom;prénom;age;poids;taille;motdepasse;email;is_admin;statut
+id_user;pseudo;nom;prï¿½nom;age;poids;taille;motdepasse;email;is_admin;statut
 141;admin;admin;;;;;admin;admin@admin.com;True;
 1;user_1_train;Nom_1;Prenom_1;27;92;167;ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f;user1@trainingapp.com;True;
 2;user_2_train;Nom_2;Prenom_2;21;73;190;ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f;user2@trainingapp.com;False;
