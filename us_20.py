@@ -142,7 +142,7 @@ def handle_save_new_session(popup_window, name_entry, date_entry, exo_listbox):
     popup_window.destroy()
 def open_create_session_popup():
     popup = tk.Toplevel(root)
-    popup.title("Créer une nouvelle séance")
+    popup.title("Corentin was here")
     popup.geometry("450x600")
     popup.configure(bg=FRAME_BG)
     popup.resizable(False, False)
