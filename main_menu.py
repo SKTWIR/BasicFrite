@@ -20,6 +20,7 @@ import us_31
 import app_gui
 import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
+import US_11_9 # <-- NOUVEL IMPORT (fusionné)
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -41,10 +42,7 @@ def view_sessions():
 # --- FONCTION DE SUPPRESSION (Version CSV fonctionnelle) ---
 
 def delete_account():
-    """
-    Supprime le compte de l'utilisateur connecté (current_user_data) 
-    du fichier User.csv.
-    """
+    # ... (La fonction delete_account reste inchangée) ...
     global current_user_data
     if not current_user_data:
         messagebox.showerror("Erreur", "Aucun utilisateur connecté, suppression impossible.")
@@ -89,28 +87,23 @@ def delete_account():
 # --- NOUVELLE FONCTIONNALITÉ : Chat utilisateur (Notifications) ---
 
 def open_chat_window():
-    """Affiche les notifications envoyées par l'administrateur (Chat simple)."""
+    # ... (La fonction open_chat_window reste inchangée) ...
     chat = tk.Toplevel(root)
     chat.title("💬 Chat - Notifications")
     chat.geometry("450x400")
-
     BG_COLOR = "#ECF0F1"
     TEXT_COLOR = "#17202A"
     chat.configure(bg=BG_COLOR)
-
     tk.Label(
         chat, text="💬 Messages de l'administrateur", font=("Arial", 14, "bold"),
         bg=BG_COLOR, fg=TEXT_COLOR
     ).pack(pady=10)
-
     if not NOTIFICATIONS:
         tk.Label(
             chat, text="Aucune notification pour le moment.", font=("Arial", 11),
             bg=BG_COLOR, fg=TEXT_COLOR
         ).pack(pady=20)
         return
-
-    # ... (Le reste du code de open_chat_window reste inchangé) ...
     container = tk.Frame(chat, bg=BG_COLOR)
     container.pack(fill="both", expand=True, padx=10, pady=10)
     canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -139,8 +132,7 @@ def open_chat_window():
 # --- NOUVELLE FONCTIONNALITÉ : Fenêtre Admin pour envoyer une notification ---
 
 def open_admin_notification_window():
-    """Fenêtre pour que l'administrateur envoie une notification générale (USER STORY 40)."""
-    # ... (Le code de open_admin_notification_window reste inchangé) ...
+    # ... (La fonction open_admin_notification_window reste inchangée) ...
     BG_COLOR = "#ECF0F1"
     BTN_PRIMARY = "#2980B9"
     BTN_PRIMARY_ACTIVE = "#1F618D"
@@ -185,10 +177,7 @@ def open_admin_notification_window():
 # --- Fonctions de Navigation ---
 
 def switch_to_login(force_logout=False):
-    """
-    Déconnexion : Ferme le menu et affiche l'écran de connexion/initial.
-    Si force_logout est True, saute la confirmation.
-    """
+    # ... (La fonction switch_to_login reste inchangée) ...
     global current_user_data
     current_user_data = None 
     if not ('root' in globals() and root.winfo_exists()):
@@ -201,21 +190,24 @@ def switch_to_login(force_logout=False):
 
 
 def switch_to_planning():
-    """Lance l'écran de planification (us_15)."""
     us_15.run_planning_screen(root, switch_to_menu, current_user_data)
 
 def switch_to_profile():
-    """Lance l'écran du profil utilisateur (app_gui) en passant les données."""
     if current_user_data:
         app_gui.run_profile_screen(root, switch_to_menu, current_user_data)
     else:
         messagebox.showerror("Erreur", "Impossible de charger le profil. Données utilisateur non trouvées.")
 
 def switch_to_admin_menu(user_data):
-    """Lance l'interface Administrateur en passant les données."""
     global current_user_data
     current_user_data = user_data
     run_admin_menu()
+
+# --- NOUVELLE FONCTION DE NAVIGATION (fusionnée) ---
+def switch_to_exercise_search():
+    """Lance l'écran de recherche d'exercices (US_11_9)."""
+    # Le callback (switch_to_menu) attend user_data, donc nous utilisons lambda
+    US_11_9.run_exercise_search_screen(root, lambda: switch_to_menu(current_user_data))
 
 def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
@@ -224,7 +216,7 @@ def switch_to_menu(user_data):
     user_first_name = current_user_data.get('prénom', 'sportif')
     
     # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
-    root.geometry("450x520") # Augmenté de 450 à 520
+    root.geometry("450x570") # Augmenté pour le nouveau bouton
     # --- FIN CORRECTION ---
     
     root.resizable(False, False)
@@ -248,11 +240,12 @@ def switch_to_menu(user_data):
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
 
-    # Boutons de Fonctionnalités Utilisateur
+    # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
         ("ℹ️ Mon Profil", switch_to_profile), 
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
+        ("🔍 Recherche Exercice", switch_to_exercise_search), # <-- AJOUTÉ (fusionné)
     ]
 
     for text, command in boutons:
@@ -263,7 +256,7 @@ def switch_to_menu(user_data):
         )
         btn.pack(pady=8)
         
-    # --- AJOUT DU BOUTON MOTIVATION ---
+    # --- BOUTON MOTIVATION (déjà présent) ---
     btn_motivation = tk.Button(
         button_frame, 
         text="🔥 Message de motivation",
