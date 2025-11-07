@@ -1,4 +1,4 @@
-# Fichier : app_gui.py (Ajout de nbentrainementsemaine)
+# Fichier : app_gui.py (Ajout de ;objectif)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -15,7 +15,7 @@ USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
 class UserProfile:
     """Valide les informations du profil utilisateur."""
     
-    def __init__(self, first_name, last_name, email=None, age=None, weight=None, height=None, nb_seances=None):
+    def __init__(self, first_name, last_name, email=None, age=None, weight=None, height=None, nb_seances=None, objectif=None): # NOUVEL ARGUMENT
         if not first_name or not last_name:
             raise ValueError("Le prénom et le nom ne peuvent pas être vides.")
         self.first_name = first_name
@@ -40,11 +40,12 @@ class UserProfile:
                 raise ValueError("La taille (m) doit être un nombre positif (ex: 1.75).")
         self.height = height
         
-        # NOUVELLE VALIDATION
         if nb_seances is not None:
             if not isinstance(nb_seances, int) or not 0 <= nb_seances <= 7:
                  raise ValueError("Le nombre de séances doit être un entier entre 0 et 7.")
         self.nb_seances = nb_seances
+        
+        self.objectif = objectif # Pas de validation complexe pour l'objectif (simple texte)
 
 
 # --- VARIABLES GLOBALES ---
@@ -54,7 +55,8 @@ entry_email = None
 entry_age = None
 entry_weight = None
 entry_height = None
-entry_nb_seances = None # NOUVELLE VARIABLE GLOBALE
+entry_nb_seances = None 
+entry_objectif = None # NOUVELLE VARIABLE GLOBALE
 current_editing_user_id = None 
 
 
@@ -76,7 +78,8 @@ def submit_data(return_callback, current_data):
         age_str = entry_age.get() if entry_age.get() else ''
         weight_str = entry_weight.get() if entry_weight.get() else ''
         height_str = entry_height.get() if entry_height.get() else ''
-        nb_seances_str = entry_nb_seances.get() if entry_nb_seances.get() else '' # NOUVELLE VALEUR
+        nb_seances_str = entry_nb_seances.get() if entry_nb_seances.get() else ''
+        objectif_str = entry_objectif.get() if entry_objectif.get() else '' # NOUVELLE VALEUR
         
         # 2. Validation
         age_val = int(age_str) if age_str else None
@@ -84,7 +87,7 @@ def submit_data(return_callback, current_data):
         height_val = float(height_str) if height_str else None
         nb_seances_val = int(nb_seances_str) if nb_seances_str else None
         
-        UserProfile(first_name, last_name, email, age_val, weight_val, height_val, nb_seances_val) # Validation
+        UserProfile(first_name, last_name, email, age_val, weight_val, height_val, nb_seances_val, objectif_str) # Validation
         
         # 3. Lecture du CSV et mise à jour
         rows = []
@@ -105,7 +108,9 @@ def submit_data(return_callback, current_data):
                         row['age'] = age_str
                         row['poids'] = weight_str
                         row['taille'] = height_str
-                        row['nbentrainementsemaine'] = nb_seances_str # <-- NOUVELLE SAUVEGARDE
+                        # Mise à jour des nouveaux champs
+                        row['nbentrainementsemaine'] = nb_seances_str 
+                        row['objectif'] = objectif_str # <-- SAUVEGARDE DU NOUVEAU CHAMP
                         updated_row_data = row 
                     rows.append(row)
         except Exception as e:
@@ -126,7 +131,7 @@ def submit_data(return_callback, current_data):
             messagebox.showerror("Erreur Écriture CSV", f"Erreur (écriture): {e}")
             return
 
-        messagebox.showinfo("Succès", f"Profil de {first_name} mis à jour!")
+        messagebox.showinfo("Succès", f"Profil de {first_name} mis à jour! Objectif: {objectif_str}.")
         return_callback(updated_row_data) 
 
     except (ValueError, TypeError) as e:
@@ -142,7 +147,7 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
     """
     Lance l'interface du profil utilisateur dans la fenêtre fournie.
     """
-    global entry_first_name, entry_last_name, entry_email, entry_age, entry_weight, entry_height, entry_nb_seances, current_editing_user_id
+    global entry_first_name, entry_last_name, entry_email, entry_age, entry_weight, entry_height, entry_nb_seances, entry_objectif, current_editing_user_id
 
     current_editing_user_id = user_data.get('id_user')
     
@@ -152,7 +157,7 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
 
     # 2. Configuration de la fenêtre
     root_window.title("Profil Utilisateur")
-    root_window.geometry("550x520") # TAILLE AJUSTÉE
+    root_window.geometry("550x550") # TAILLE AJUSTÉE pour le nouvel champ
     root_window.resizable(False, False)
 
     # --- Définition du style (THÈME BLEU) ---
@@ -173,7 +178,7 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
     # --- Label Titre
     tk.Label(main_frame, text="ℹ️ Mon Profil", font=("Helvetica", 16, "bold"), bg=BG_COLOR).grid(row=0, column=0, columnspan=2, pady=10)
 
-    # Remplissage des champs (utilisant 'prénom' avec accent)
+    # Remplissage des champs (utilisant les données du CSV)
     fields = {
         "Prénom": tk.StringVar(value=user_data.get('prénom', '')),
         "Nom": tk.StringVar(value=user_data.get('nom', '')),
@@ -181,7 +186,8 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
         "Âge": tk.StringVar(value=user_data.get('age', '')),
         "Poids (kg)": tk.StringVar(value=user_data.get('poids', '')),
         "Taille (m)": tk.StringVar(value=user_data.get('taille', '')),
-        "Séances/semaine": tk.StringVar(value=user_data.get('nbentrainementsemaine', '0')), # NOUVEL AFFICHAGE
+        "Séances/semaine": tk.StringVar(value=user_data.get('nbentrainementsemaine', '0')),
+        "Objectif principal": tk.StringVar(value=user_data.get('objectif', '')) # NOUVEL AFFICHAGE
     }
 
     row_index = 1
@@ -201,7 +207,8 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
         elif label_text == "Âge": entry_age = entry
         elif label_text == "Poids (kg)": entry_weight = entry
         elif label_text == "Taille (m)": entry_height = entry
-        elif label_text == "Séances/semaine": entry_nb_seances = entry # NOUVELLE LIAISON
+        elif label_text == "Séances/semaine": entry_nb_seances = entry
+        elif label_text == "Objectif principal": entry_objectif = entry # NOUVELLE LIAISON
         
         row_index += 1
 
@@ -228,7 +235,7 @@ if __name__ == '__main__':
         print(f"Retour Menu Principal demandé. Données reçues: {data_recue}")
         sys.exit()
     
-    dummy_data = {'id_user': '1', 'prénom': 'Test', 'nom': 'User', 'email': 'test@test.com', 'age': '25', 'poids': '70', 'taille': '1.80', 'nbentrainementsemaine': '3'}
+    dummy_data = {'id_user': '1', 'prénom': 'Test', 'nom': 'User', 'email': 'test@test.com', 'age': '25', 'poids': '70', 'taille': '1.80', 'nbentrainementsemaine': '3', 'objectif': 'Prise de masse'}
 
     root = tk.Tk()
     run_profile_screen(root, dummy_callback, dummy_data)

@@ -1,4 +1,4 @@
-# Fichier : main_menu.py (Fusionné et Corrigé)
+# Fichier : main_menu.py (Code final complet et fusionné)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -20,8 +20,8 @@ import us_31
 import app_gui
 import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
-import US_11_9 # Module de Recherche Exercice
-import US_35_AjoutNouvelExo # <-- NOUVEL IMPORT (fusionné)
+import US_11_9 # Module de recherche d'exercices
+import US_35_AjoutNouvelExo # Module d'ajout d'exercices
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -43,7 +43,10 @@ def view_sessions():
 # --- FONCTION DE SUPPRESSION (Version CSV fonctionnelle) ---
 
 def delete_account():
-    # ... (La fonction delete_account reste inchangée) ...
+    """
+    Supprime le compte de l'utilisateur connecté (current_user_data) 
+    du fichier User.csv.
+    """
     global current_user_data
     if not current_user_data:
         messagebox.showerror("Erreur", "Aucun utilisateur connecté, suppression impossible.")
@@ -88,23 +91,27 @@ def delete_account():
 # --- NOUVELLE FONCTIONNALITÉ : Chat utilisateur (Notifications) ---
 
 def open_chat_window():
-    # ... (La fonction open_chat_window reste inchangée) ...
+    """Affiche les notifications envoyées par l'administrateur (Chat simple)."""
     chat = tk.Toplevel(root)
     chat.title("💬 Chat - Notifications")
     chat.geometry("450x400")
+
     BG_COLOR = "#ECF0F1"
     TEXT_COLOR = "#17202A"
     chat.configure(bg=BG_COLOR)
+
     tk.Label(
         chat, text="💬 Messages de l'administrateur", font=("Arial", 14, "bold"),
         bg=BG_COLOR, fg=TEXT_COLOR
     ).pack(pady=10)
+
     if not NOTIFICATIONS:
         tk.Label(
             chat, text="Aucune notification pour le moment.", font=("Arial", 11),
             bg=BG_COLOR, fg=TEXT_COLOR
         ).pack(pady=20)
         return
+
     container = tk.Frame(chat, bg=BG_COLOR)
     container.pack(fill="both", expand=True, padx=10, pady=10)
     canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -133,7 +140,7 @@ def open_chat_window():
 # --- NOUVELLE FONCTIONNALITÉ : Fenêtre Admin pour envoyer une notification ---
 
 def open_admin_notification_window():
-    # ... (La fonction open_admin_notification_window reste inchangée) ...
+    """Fenêtre pour que l'administrateur envoie une notification générale (USER STORY 40)."""
     BG_COLOR = "#ECF0F1"
     BTN_PRIMARY = "#2980B9"
     BTN_PRIMARY_ACTIVE = "#1F618D"
@@ -178,7 +185,10 @@ def open_admin_notification_window():
 # --- Fonctions de Navigation ---
 
 def switch_to_login(force_logout=False):
-    # ... (La fonction switch_to_login reste inchangée) ...
+    """
+    Déconnexion : Ferme le menu et affiche l'écran de connexion/initial.
+    Si force_logout est True, saute la confirmation.
+    """
     global current_user_data
     current_user_data = None 
     if not ('root' in globals() and root.winfo_exists()):
@@ -191,24 +201,27 @@ def switch_to_login(force_logout=False):
 
 
 def switch_to_planning():
+    """Lance l'écran de planification (us_15)."""
     us_15.run_planning_screen(root, switch_to_menu, current_user_data)
 
 def switch_to_profile():
+    """Lance l'écran du profil utilisateur (app_gui) en passant les données."""
     if current_user_data:
         app_gui.run_profile_screen(root, switch_to_menu, current_user_data)
     else:
         messagebox.showerror("Erreur", "Impossible de charger le profil. Données utilisateur non trouvées.")
 
 def switch_to_admin_menu(user_data):
+    """Lance l'interface Administrateur en passant les données."""
     global current_user_data
     current_user_data = user_data
     run_admin_menu()
 
-# --- NOUVELLE FONCTION DE NAVIGATION (fusionnée) ---
 def switch_to_exercise_search():
     """Lance l'écran de recherche d'exercices (US_11_9)."""
-    # Le callback (switch_to_menu) attend user_data, donc nous utilisons lambda
+    # Renomme l'appel pour correspondre à votre import (US_11_9_Recherche_Exo)
     US_11_9.run_exercise_search_screen(root, lambda: switch_to_menu(current_user_data))
+
 
 def switch_to_menu(user_data):
     """Affiche l'écran du Menu Principal Utilisateur en recevant les données."""
@@ -217,7 +230,7 @@ def switch_to_menu(user_data):
     user_first_name = current_user_data.get('prénom', 'sportif')
     
     # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
-    root.geometry("450x570") # Taille pour 5 boutons + extras
+    root.geometry("450x570") # Augmenté pour le nouveau bouton
     # --- FIN CORRECTION ---
     
     root.resizable(False, False)

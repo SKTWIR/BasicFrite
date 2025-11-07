@@ -1,4 +1,4 @@
-# Fichier : connection_initial.py (Ajout de nbentrainementsemaine)
+# Fichier : connection_initial.py (Correction de l'encodage de lecture)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -20,16 +20,19 @@ LINK_FG = "#2980B9"
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
 # --------------------
 
-# --- FONCTIONS UTILITAIRES CSV ET SÉCURITÉ (Encodage UTF-8) ---
+# --- FONCTIONS UTILITAIRES CSV ET SÉCURITÉ ---
 
 def check_user(pseudo, password):
-    # ... (Fonction inchangée) ...
+    """
+    Vérifie le pseudo/mdp (en texte clair) et retourne la ligne.
+    """
     if not os.path.exists(USER_CSV_FILE):
         messagebox.showerror("Erreur Fichier", "Fichier User.csv introuvable.")
         return None
 
     try:
-        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+        # --- CORRECTION ENCODAGE (Lecture) ---
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
                 if row['pseudo'] == pseudo:
@@ -41,11 +44,12 @@ def check_user(pseudo, password):
         return None
 
 def get_next_user_id():
-    # ... (Fonction inchangée) ...
+    """Trouve le ID maximum dans le CSV et retourne ID+1."""
     max_id = 0
     if not os.path.exists(USER_CSV_FILE): return 1 
     try:
-        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+        # --- CORRECTION ENCODAGE (Lecture) ---
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
                 try:
@@ -56,10 +60,11 @@ def get_next_user_id():
     except Exception: return 1 
 
 def does_user_exist(username, email):
-    # ... (Fonction inchangée) ...
+    """Vérifie si le pseudo ou l'email existent déjà."""
     if not os.path.exists(USER_CSV_FILE): return False
     try:
-        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+        # --- CORRECTION ENCODAGE (Lecture) ---
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
                 if row['pseudo'] == username or row['email'] == email:
@@ -71,7 +76,8 @@ def does_user_exist(username, email):
 
 def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin_callback):
     
-    # ... (Le début de la fonction run_connection_initial reste inchangé) ...
+    # ... (Le reste de la fonction est inchangé) ...
+    
     # ------------------ PRÉPARATION DE LA FENÊTRE ------------------
     for widget in root_window.winfo_children():
         widget.destroy()
@@ -212,23 +218,18 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
             try:
                 new_id = get_next_user_id()
                 
-                # Création de la ligne (12 éléments, le dernier est le nouveau champ)
                 new_row = [
-                    new_id, 
-                    data['username'], 
-                    data['nom'], 
-                    data['prenom'], 
+                    new_id,
+                    data['username'], data['nom'], data['prenom'], 
                     data['age'] if data['age'] else '', 
                     data['poids'] if data['poids'] else '',
                     data['taille'] if data['taille'] else '',
                     data['mdp'], 
                     data['email'], 
-                    'False', # is_admin
-                    '',      # statut (vide)
-                    '0'      # <-- nbentrainementsemaine (initialisé à 0)
+                    'False', '','4', 'Force'
                 ]
 
-                # Écriture dans le CSV
+                # --- CORRECTION ENCODAGE (Écriture) ---
                 with open(USER_CSV_FILE, mode='a', newline='', encoding='utf-8') as f:
                     csv_writer = csv.writer(f, delimiter=';')
                     csv_writer.writerow(new_row)
