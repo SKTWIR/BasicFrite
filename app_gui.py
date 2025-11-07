@@ -6,9 +6,15 @@ from tkinter import font as tkFont
 import sys
 import os 
 import csv 
+# Pour le graphique de progression
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from datetime import datetime
+
 
 # --- CONSTANTES ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+PROGRESS_CSV_FILE = os.path.join(os.path.dirname(__file__), 'Progression.csv')
 
 # --- DÉFINITION DE LA CLASSE (Validation) ---
 
@@ -45,6 +51,159 @@ class UserProfile:
             if not isinstance(nb_seances, int) or not 0 <= nb_seances <= 7:
                  raise ValueError("Le nombre de séances doit être un entier entre 0 et 7.")
         self.nb_seances = nb_seances
+
+def load_user_progress(user_id: str):
+    """
+    Charge les données de progression d'un utilisateur spécifique
+    depuis PROGRESS_CSV_FILE.
+    
+    Retourne un dict :
+    {
+        "Développé couché": [(date_obj, poids_float), ...],
+        "Squat": [(date_obj, poids_float), ...],
+        ...
+    }
+    """
+    progress = {}
+
+    if not os.path.exists(PROGRESS_CSV_FILE):
+        return progress  # pas de fichier = pas de données
+
+    try:
+        with open(PROGRESS_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row.get('id_user') != user_id:
+                    continue
+
+                exercice = row.get('exercice', 'Inconnu')
+                date_str = row.get('date', '')
+                poids_str = row.get('poids', '')
+
+                if not date_str or not poids_str:
+                    continue
+
+                # Conversion de la date (on tente deux formats courants)
+                date_obj = None
+                for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+                    try:
+                        date_obj = datetime.strptime(date_str, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                if date_obj is None:
+                    # Si la date est illisible, on ignore la ligne
+                    continue
+
+                try:
+                    poids_val = float(poids_str.replace(',', '.'))
+                except ValueError:
+                    continue
+
+                if exercice not in progress:
+                    progress[exercice] = []
+                progress[exercice].append((date_obj, poids_val))
+
+        # Tri des listes par date
+        for exo, points in progress.items():
+            points.sort(key=lambda x: x[0])
+
+    except Exception as e:
+        messagebox.showerror("Erreur Progression", f"Erreur lors du chargement des données de progression : {e}")
+
+    return progress
+
+def show_progress_window(root_window, user_data):
+    """
+    Affiche une fenêtre avec un graphique de progression pour un exercice choisi.
+    USER STORY 17.
+    """
+    user_id = user_data.get('id_user')
+    if not user_id:
+        messagebox.showerror("Erreur", "ID utilisateur introuvable pour afficher la progression.")
+        return
+
+    progress = load_user_progress(user_id)
+    if not progress:
+        messagebox.showinfo("Progression", "Aucune donnée de progression trouvée pour cet utilisateur.")
+        return
+
+    # Fenêtre de progression
+    win = tk.Toplevel(root_window)
+    win.title("📈 Progression de l'utilisateur")
+    win.geometry("700x500")
+    win.resizable(False, False)
+    BG_COLOR = "#D6EAF8"
+    win.configure(bg=BG_COLOR)
+
+    # Titre
+    full_name = f"{user_data.get('prénom', '')} {user_data.get('nom', '')}".strip()
+    tk.Label(
+        win,
+        text=f"📈 Progression de {full_name}",
+        font=("Helvetica", 14, "bold"),
+        bg=BG_COLOR
+    ).pack(pady=10)
+
+    # Liste des exercices disponibles
+    exercices = list(progress.keys())
+    selected_exo = tk.StringVar(value=exercices[0])
+
+    top_frame = tk.Frame(win, bg=BG_COLOR)
+    top_frame.pack(pady=5)
+
+    tk.Label(
+        top_frame,
+        text="Choisissez un exercice :",
+        font=("Helvetica", 11),
+        bg=BG_COLOR
+    ).pack(side="left", padx=5)
+
+    exo_menu = tk.OptionMenu(top_frame, selected_exo, *exercices)
+    exo_menu.config(font=("Helvetica", 10))
+    exo_menu.pack(side="left", padx=5)
+
+    # Frame pour le graphique
+    graph_frame = tk.Frame(win, bg=BG_COLOR)
+    graph_frame.pack(expand=True, fill="both", padx=10, pady=10)
+
+    def plot_exercise(exercice_name):
+        # Effacer ancien graphique
+        for widget in graph_frame.winfo_children():
+            widget.destroy()
+
+        data_points = progress.get(exercice_name, [])
+        if not data_points:
+            tk.Label(
+                graph_frame,
+                text="Aucune donnée pour cet exercice.",
+                font=("Helvetica", 11),
+                bg=BG_COLOR
+            ).pack(pady=20)
+            return
+
+        dates = [p[0] for p in data_points]
+        poids = [p[1] for p in data_points]
+
+        fig, ax = plt.subplots(figsize=(6, 3))
+        ax.plot(dates, poids, marker='o')
+        ax.set_title(f"Évolution du poids - {exercice_name}")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Poids (kg)")
+        fig.autofmt_xdate()
+
+        canvas = FigureCanvasTkAgg(fig, master=graph_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
+
+    # Quand o usuário troca de exercício no menu
+    def on_exercice_change(*args):
+        plot_exercise(selected_exo.get())
+
+    selected_exo.trace_add("write", on_exercice_change)
+
+    # Premier affichage
+    plot_exercise(selected_exo.get())
 
 
 # --- VARIABLES GLOBALES ---
@@ -205,14 +364,37 @@ def run_profile_screen(root_window, switch_to_menu_callback, user_data):
         
         row_index += 1
 
-    # Bouton de soumission (Passe les données)
-    submit_button = tk.Button(main_frame, text="Enregistrer", 
-                              command=lambda: submit_data(switch_to_menu_callback, user_data),
-                              font=FONT_BUTTON, bg=BUTTON_BG, fg=BUTTON_FG, relief="flat", 
-                              borderwidth=0, activebackground="#2874A6", activeforeground="#FFFFFF")
-    
+        # --- Bouton Voir progression (US 17) ---
+    progress_button = tk.Button(
+        main_frame,
+        text="📈 Voir progression",
+        command=lambda: show_progress_window(root_window, user_data),
+        font=FONT_BUTTON,
+        bg=BUTTON_BG,
+        fg=BUTTON_FG,
+        relief="flat",
+        borderwidth=0,
+        activebackground="#2874A6",
+        activeforeground="#FFFFFF"
+    )
+    progress_button.grid(row=row_index, column=0, pady=(20, 10), padx=10, sticky="w")
+
+    # --- Bouton Enregistrer ---
+    submit_button = tk.Button(
+        main_frame,
+        text="Enregistrer",
+        command=lambda: submit_data(switch_to_menu_callback, user_data),
+        font=FONT_BUTTON,
+        bg=BUTTON_BG,
+        fg=BUTTON_FG,
+        relief="flat",
+        borderwidth=0,
+        activebackground="#2874A6",
+        activeforeground="#FFFFFF"
+    )
     submit_button.grid(row=row_index, column=1, pady=(20, 10), padx=10, sticky="e")
     row_index += 1
+
 
     # Bouton Retour Menu (Passe les données)
     return_button = tk.Button(main_frame, text="⬅️ Retour Menu", 
