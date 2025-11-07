@@ -1,4 +1,4 @@
-# Fichier : main_menu.py (Mis à jour pour appeler l'éditeur de séances)
+# Fichier : main_menu.py (Fusionné et Corrigé)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -6,9 +6,11 @@ import sys
 import os 
 import csv 
 
-# ... (Imports NOTIFICATIONS, add_notification, Thème...) ...
+# Notifications générales stockées en mémoire (simulation de base de données)
 NOTIFICATIONS = []
+
 def add_notification(title: str, message: str):
+    """Ajoute une notification dans la liste globale (simulé)."""
     NOTIFICATIONS.append({"title": title, "message": message})
 
 # Import des autres écrans
@@ -16,16 +18,14 @@ import connection_initial
 import us_15
 import us_31
 import app_gui
-import us_39 
-import us_28 
-import US_11_9
-import US_35_AjoutNouvelExo 
-import us_seances_editor # <-- NOUVEL IMPORT
+import us_39 # Module de gestion Admin
+import us_28 # Module de motivation
+import US_11_9 # Module de recherche d'exercices
+import US_35_AjoutNouvelExo # Module d'ajout d'exercices
+import us_journal # <-- Le journal qui contient la fonction run_training_journal
 
-# ... (Constantes CSV, Variable Globale, Fonctions Thème...) ...
-USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
-ENTRAINEMENT_CSV_FILE = os.path.join(os.path.dirname(__file__), 'Entrainement.csv') 
-current_user_data = None
+
+# --- Thème (Fonctions inchangées) ---
 IS_DARK_MODE = False
 def get_theme_colors():
     if IS_DARK_MODE:
@@ -38,6 +38,7 @@ def get_theme_colors():
             "BG_COLOR": "#ECF0F1", "FRAME_BG": "#FFFFFF", "BUTTON_BG": "#2980B9",
             "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#17202A"
         }
+
 def toggle_theme():
     global IS_DARK_MODE
     IS_DARK_MODE = not IS_DARK_MODE
@@ -50,26 +51,32 @@ def toggle_theme():
         switch_to_login()
 
 
+# --- CONSTANTE CSV ---
+USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+current_user_data = None
+
 # --- Fonctions d'Action/Simulations ---
 
 def show_user_info():
     messagebox.showinfo("Info", "Utilisez 'Mon Profil' pour voir vos informations.")
 
-# --- FONCTION 'VOIR MES SÉANCES' (REMPLACÉE) ---
-def view_sessions():
+# --- NOUVELLE FONCTION DE LOGGING (Ancienne view_sessions) ---
+def launch_training_journal():
     """
-    Lance l'éditeur de séances (us_seances_editor.py).
+    Lance l'interface du Journal d'Entraînement (us_journal.py) 
+    pour loguer ou voir les séries passées.
     """
     global current_user_data
     if not current_user_data:
         messagebox.showerror("Erreur", "Aucun utilisateur connecté.")
         return
     
-    # Appelle le nouvel écran d'édition
-    us_seances_editor.run_seances_editor_screen(root, switch_to_menu, current_user_data)
+    # Appel du Journal d'Entraînement
+    us_journal.run_training_journal(root, switch_to_menu, current_user_data)
 
 
 # --- FONCTION DE SUPPRESSION (Version CSV fonctionnelle) ---
+
 def delete_account():
     # ... (La fonction delete_account reste inchangée) ...
     global current_user_data
@@ -87,7 +94,7 @@ def delete_account():
         fieldnames = []
         found = False
         try:
-            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
+            with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 fieldnames = reader.fieldnames 
                 for row in reader:
@@ -114,6 +121,7 @@ def delete_account():
 
 
 # --- NOUVELLE FONCTIONNALITÉ : Chat utilisateur (Notifications) ---
+
 def open_chat_window():
     # ... (La fonction open_chat_window reste inchangée) ...
     chat = tk.Toplevel(root)
@@ -274,7 +282,7 @@ def switch_to_menu(user_data):
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
         ("ℹ️ Mon Profil", switch_to_profile), 
-        ("📅 Voir Mes Séances", view_sessions), # <-- APPELLE L'ÉDITEUR
+        ("📅 VOIR/LOGUER SÉANCES", launch_training_journal), # <-- MODIFIÉ
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
         ("🔍 Recherche Exercice", switch_to_exercise_search), 
     ]
@@ -345,7 +353,6 @@ def switch_to_menu(user_data):
 
 
 def run_admin_menu():
-    """Crée et affiche l'interface Administrateur."""
     # ... (La fonction run_admin_menu reste inchangée) ...
     for widget in root.winfo_children():
         widget.destroy()
