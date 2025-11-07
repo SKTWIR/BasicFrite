@@ -14,6 +14,8 @@ import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
 import US_11_9 # Module de Recherche Exercice
 import US_35_AjoutNouvelExo # <-- NOUVEL IMPORT (fusionné)
+import us_32
+
 
 # Notifications générales stockées en mémoire (simulation de base de données)
 NOTIFICATIONS = []
@@ -283,11 +285,13 @@ def switch_to_menu(user_data):
 
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
-        ("ℹ️ Mon Profil", switch_to_profile), 
+        ("ℹ️ Mon Profil", switch_to_profile),
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
-        ("🔍 Recherche Exercice", switch_to_exercise_search), # <-- AJOUTÉ (fusionné)
+        ("🔍 Recherche Exercice", switch_to_exercise_search),  # você já tem
+        ("💡 Exercice alternatif", lambda: us_32.run_alternative_exercise_screen(root, lambda: switch_to_menu(current_user_data))),
     ]
+
 
     for text, command in boutons:
         btn = tk.Button(
