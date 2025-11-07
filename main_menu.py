@@ -209,13 +209,20 @@ def open_admin_notification_window():
 
 def switch_to_login():
     """Déconnexion : Ferme le menu et affiche l'écran de connexion/initial."""
+    global current_user_data
+    current_user_data = None # Réinitialiser l'utilisateur lors de la déconnexion
+    
     if messagebox.askyesno("Déconnexion", "Êtes-vous sûr de vouloir vous déconnecter ?"):
-        connection_initial.run_connection_initial(root, switch_to_menu)
+        connection_initial.run_connection_initial(root, switch_to_menu, switch_to_admin_menu)
+
+# Dans main_menu.py
 
 
 def switch_to_planning():
     """Lance l'écran de planification (us_15)."""
-    us_15.run_planning_screen(root, switch_to_menu)
+    # --- CORRECTION ---
+    # Nous devons passer les current_user_data à l'écran de planification
+    us_15.run_planning_screen(root, switch_to_menu, current_user_data)
 
 
 def switch_to_profile():
@@ -225,6 +232,8 @@ def switch_to_profile():
 
 def switch_to_admin_menu():
     """Lance l'interface Administrateur."""
+    global current_user_data
+    current_user_data = user_data # Stocke les données
     run_admin_menu()
 
 
@@ -407,14 +416,13 @@ def run_admin_menu():
         relief="flat"
     ).pack(pady=20)
 
-
 def run_app_start():
     """Fonction de démarrage : crée la fenêtre root et lance l'écran de connexion initial."""
     global root
     root = tk.Tk()
 
     # Démarrage sur l'écran de connexion/inscription
-    connection_initial.run_connection_initial(root, switch_to_menu)
+    connection_initial.run_connection_initial(root, switch_to_menu, switch_to_admin_menu)
     root.mainloop()
 
 
