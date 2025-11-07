@@ -1,11 +1,11 @@
-id_user;pseudo;nom;prénom;age;poids;taille;motdepasse;email;is_admin;statut
+﻿id_user;pseudo;nom;prénom;age;poids;taille;motdepasse;email;is_admin;statut
 141;admin;admin;admin;100;100;2.00;admin;admin@admin.com;True;
 1;user_1_train;Nom1;Prenom1;28;93;1.68;mdp1;user1t@trainingapp.com;False;
 2;user_2_train;Nom_2;Prenom_2;21;73;1.90;mdp2;user2@trainingapp.com;False;
 3;user_3_train;Nom_3;Prenom_3;26;97;1.70;mdp3;user3@trainingapp.com;False;
 4;user_4_train;Nom_4;Prenom_4;46;80;1.69;mdp4;user4@trainingapp.com;False;
 5;user_5_train;Nom_5;Prenom_5;31;93;1.88;mdp5;user5@trainingapp.com;False;
-6;user_6_train;Nom_6;Prenom_6;20;75;1.69;mdp6;user6@trainingapp.com;False;
+6;user_6_train;Nom_6;Prenom_6;20;75;1.69;mdp6;user6@trainingapp.com;False;bloqué
 7;user_7_train;Nom_7;Prenom_7;31;68;1.67;mdp7;user7@trainingapp.com;False;
 8;user_8_train;Nom_8;Prenom_8;32;73;1.92;mdp8;user8@trainingapp.com;False;
 9;user_9_train;Nom_9;Prenom_9;21;95;1.74;mdp9;user9@trainingapp.com;False;
