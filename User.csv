@@ -1,4 +1,4 @@
-﻿id_user;pseudo;nom;prénom;age;poids;taille;motdepasse;email;is_admin;statut;nbentrainementsemaine
+﻿id_user;pseudo;nom;prénom;age;poids;taille;motdepasse;email;is_admin;statut;nbentrainementsemaine;objectif
 141;admin;admin;admin;100;100;2.00;admin;admin@admin.com;True;;4
 1;user_1_train;Nom1;Prenom1;28;93;1.68;mdp1;user1t@trainingapp.com;False;;4
 2;user_2_train;Nom_2;Prenom_2;21;73;1.90;mdp2;user2@trainingapp.com;False;;4

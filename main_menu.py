@@ -1,7 +1,8 @@
-# Fichier : main_menu.py (Fusionné et Corrigé)
+# Fichier : main_menu.py (Objectifs fonctionnels)
 
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import simpledialog # <-- NOUVEL IMPORT
 import sys
 import os 
 import csv 
@@ -39,6 +40,100 @@ def view_sessions():
         "📅 Mes Séances",
         "Séances de la semaine :\nLundi: Upper\nMercredi: Lower\nVendredi: Full Body"
     )
+
+# --- NOUVELLES FONCTIONS : GESTION OBJECTIF ---
+
+def view_weekly_goal():
+    """Affiche l'objectif hebdomadaire de l'utilisateur."""
+    if not current_user_data:
+        messagebox.showerror("Erreur", "Aucun utilisateur connecté.")
+        return
+
+    # Récupère l'objectif depuis la variable en mémoire (chargée à la connexion)
+    objectif_actuel = current_user_data.get('objectif')
+
+    if objectif_actuel: # Si la chaîne n'est pas vide ou None
+        messagebox.showinfo(
+            "🎯 Mon Objectif Hebdomadaire",
+            f"Votre objectif actuel est :\n\n{objectif_actuel}"
+        )
+    else:
+        messagebox.showinfo(
+            "🎯 Mon Objectif Hebdomadaire",
+            "Vous n'avez pas encore défini d'objectif."
+        )
+
+def modify_weekly_goal():
+    """Demande et met à jour l'objectif de l'utilisateur dans le CSV et en mémoire."""
+    global current_user_data
+    if not current_user_data:
+        messagebox.showerror("Erreur", "Aucun utilisateur connecté.")
+        return
+
+    user_id_to_update = current_user_data.get('id_user')
+    objectif_actuel = current_user_data.get('objectif', '') # Valeur par défaut si non défini
+
+    # Demande le nouvel objectif à l'utilisateur
+    nouvel_objectif = simpledialog.askstring(
+        "✏️ Modifier Objectif", 
+        "Quel est votre nouvel objectif ?",
+        initialvalue=objectif_actuel # Pré-remplit avec l'ancien
+    )
+
+    # Si l'utilisateur clique sur "Annuler", simpledialog renvoie None
+    if nouvel_objectif is None:
+        return # L'utilisateur a annulé
+
+    # Nettoie l'entrée
+    nouvel_objectif_clean = nouvel_objectif.strip()
+
+    # --- Mise à jour du fichier CSV ---
+    rows = []
+    fieldnames = []
+    found = False
+
+    try:
+        # 1. Lire toutes les données
+        with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            fieldnames = reader.fieldnames
+            # Assure que la colonne 'objectif' existe
+            if 'objectif' not in fieldnames:
+                messagebox.showerror("Erreur Fichier", "La colonne 'objectif' est introuvable dans User.csv.")
+                return
+
+            for row in reader:
+                if row['id_user'] == user_id_to_update:
+                    row['objectif'] = nouvel_objectif_clean # Met à jour la ligne
+                    found = True
+                rows.append(row)
+    
+    except Exception as e:
+        messagebox.showerror("Erreur Lecture CSV", f"Erreur lors de la lecture des utilisateurs: {e}")
+        return
+
+    if not found:
+        messagebox.showerror("Erreur Critique", "Votre utilisateur n'a pas été retrouvé dans le fichier CSV.")
+        return
+
+    try:
+        # 2. Réécrire toutes les données
+        with open(USER_CSV_FILE, mode='w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=';')
+            writer.writeheader()
+            writer.writerows(rows)
+    except Exception as e:
+        messagebox.showerror("Erreur Écriture CSV", f"Erreur lors de la sauvegarde: {e}")
+        return
+
+    # 3. Mettre à jour la variable globale en mémoire
+    current_user_data['objectif'] = nouvel_objectif_clean
+    
+    messagebox.showinfo("Succès", "Votre objectif a été mis à jour avec succès.")
+
+
+# --- FIN NOUVELLES FONCTIONS ---
+
 
 # --- FONCTION DE SUPPRESSION (Version CSV fonctionnelle) ---
 
@@ -216,8 +311,8 @@ def switch_to_menu(user_data):
     current_user_data = user_data 
     user_first_name = current_user_data.get('prénom', 'sportif')
     
-    # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
-    root.geometry("450x570") # Taille pour 5 boutons + extras
+    # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE (AJUSTÉE) ---
+    root.geometry("450x660") # Garde la hauteur pour la nouvelle ligne
     # --- FIN CORRECTION ---
     
     root.resizable(False, False)
@@ -246,7 +341,7 @@ def switch_to_menu(user_data):
         ("ℹ️ Mon Profil", switch_to_profile), 
         ("📅 Voir Mes Séances", view_sessions),
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
-        ("🔍 Recherche Exercice", switch_to_exercise_search), # <-- AJOUTÉ (fusionné)
+        ("🔍 Recherche Exercice", switch_to_exercise_search), 
     ]
 
     for text, command in boutons:
@@ -256,6 +351,37 @@ def switch_to_menu(user_data):
             relief="flat", bd=0, activebackground="#1F618D"
         )
         btn.pack(pady=8)
+        
+    # --- NOUVEAU CADRE POUR LES OBJECTIFS (sur une seule ligne) ---
+    objective_frame = tk.Frame(button_frame, bg=BG_COLOR)
+    objective_frame.pack(pady=8) # On pack le cadre principal verticalement
+
+    FONT_BUTTON_SMALL = ("Arial", 11, "bold") 
+
+    # Bouton 1 (plus petit, sans 'width=25')
+    btn_consult = tk.Button(
+        objective_frame, 
+        text="🎯 Consulter Objectif", 
+        command=view_weekly_goal, # <-- MIS A JOUR
+        font=FONT_BUTTON_SMALL,
+        bg=BUTTON_BG, fg=BUTTON_FG, 
+        height=1, relief="flat", bd=0, activebackground="#1F618D",
+        padx=10 
+    )
+    btn_consult.pack(side="left", padx=5) 
+
+    # Bouton 2 (plus petit, sans 'width=25')
+    btn_modify = tk.Button(
+        objective_frame, 
+        text="✏️ Modifier Objectif", 
+        command=modify_weekly_goal, # <-- MIS A JOUR
+        font=FONT_BUTTON_SMALL,
+        bg=BUTTON_BG, fg=BUTTON_FG, 
+        height=1, relief="flat", bd=0, activebackground="#1F618D",
+        padx=10 
+    )
+    btn_modify.pack(side="left", padx=5) 
+    # --- FIN DU NOUVEAU CADRE ---
         
     # --- BOUTON MOTIVATION (déjà présent) ---
     btn_motivation = tk.Button(
@@ -307,6 +433,7 @@ def switch_to_menu(user_data):
 
 def run_admin_menu():
     """Crée et affiche l'interface Administrateur."""
+    # ... (La fonction run_admin_menu reste inchangée) ...
     for widget in root.winfo_children():
         widget.destroy()
 
@@ -316,8 +443,7 @@ def run_admin_menu():
     FONT_BUTTON = ("Arial", 12, "bold")
     TEXT_COLOR = "#17202A"
 
-    # --- CORRECTION HAUTEUR ADMIN ---
-    root.geometry("450x500") # Augmenté pour 6 boutons
+    root.geometry("450x500") 
     root.title("⚙️ Menu Administrateur")
     root.configure(bg=BG_COLOR)
 
@@ -329,7 +455,6 @@ def run_admin_menu():
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
 
-    # --- LISTE DES BOUTONS ADMIN FUSIONNÉE ---
     boutons_admin = [
         ("👥 Gérer Utilisateurs",
          lambda: us_39.run_user_management(root, run_admin_menu)),
@@ -343,7 +468,6 @@ def run_admin_menu():
         ("🔗 Outil #5 (vide)",
          lambda: messagebox.showinfo("Admin", "Fonctionnalité Outil #5 (vide)")),
     ]
-    # --- FIN FUSION ---
 
     for text, command in boutons_admin:
         btn = tk.Button(
@@ -354,9 +478,9 @@ def run_admin_menu():
         btn.pack(pady=8)
         
     tk.Button(root, text="< Retour Menu Utilisateur", 
-               command=lambda: switch_to_menu(current_user_data), 
-               font=("Arial", 10),
-               bg="#AAAAAA", fg="#17202A", relief="flat").pack(pady=20)
+              command=lambda: switch_to_menu(current_user_data), 
+              font=("Arial", 10),
+              bg="#AAAAAA", fg="#17202A", relief="flat").pack(pady=20)
 
 
 def run_app_start():
