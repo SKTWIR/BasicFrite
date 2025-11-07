@@ -20,6 +20,7 @@ import us_31
 import app_gui
 import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
+import US_35_AjoutNouvelExo
 
 # --- CONSTANTE CSV ---
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
@@ -333,6 +334,8 @@ def run_admin_menu():
     boutons_admin = [
         ("👥 Gérer Utilisateurs",
          lambda: us_39.run_user_management(root, run_admin_menu)),
+        ("➕ Ajout Nouvel Exercice",
+         lambda: US_35_AjoutNouvelExo.run_add_exercise_screen(root, run_admin_menu)),
         ("📝 Gérer Contenu",
          lambda: messagebox.showinfo("Admin", "Fonctionnalité Gérer Contenu (vide)")),
         ("📊 Statistiques",
