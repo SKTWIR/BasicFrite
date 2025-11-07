@@ -1,4 +1,4 @@
-# Fichier : connection_initial.py (Correction de l'encodage de lecture)
+# Fichier : connection_initial.py (Contient Connexion, Inscription, et lien vers Récupération/Support)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -18,20 +18,18 @@ BTN_PRIMARY_ACTIVE = "#187bcd"
 TEXT_COLOR = "#17202A"
 LINK_FG = "#2980B9"
 USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+ENTRAINEMENT_CSV_FILE = os.path.join(os.path.dirname(__file__), 'Entrainement.csv')
+SEANCES_USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'Seances_Utilisateur.csv') # <-- AJOUTÉ
 # --------------------
 
 # --- FONCTIONS UTILITAIRES CSV ET SÉCURITÉ ---
 
 def check_user(pseudo, password):
-    """
-    Vérifie le pseudo/mdp (en texte clair) et retourne la ligne.
-    """
+    """Vérifie le pseudo/mdp (en texte clair) et retourne la ligne."""
     if not os.path.exists(USER_CSV_FILE):
         messagebox.showerror("Erreur Fichier", "Fichier User.csv introuvable.")
         return None
-
     try:
-        # --- CORRECTION ENCODAGE (Lecture) ---
         with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
@@ -44,11 +42,10 @@ def check_user(pseudo, password):
         return None
 
 def get_next_user_id():
-    """Trouve le ID maximum dans le CSV et retourne ID+1."""
+    """Trouve le ID maximum dans User.csv et retourne ID+1."""
     max_id = 0
     if not os.path.exists(USER_CSV_FILE): return 1 
     try:
-        # --- CORRECTION ENCODAGE (Lecture) ---
         with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
@@ -59,11 +56,28 @@ def get_next_user_id():
         return max_id + 1
     except Exception: return 1 
 
+# --- FONCTION MANQUANTE AJOUTÉE ---
+def get_next_seance_user_id():
+    """Calcule le prochain ID unique pour Seances_Utilisateur.csv"""
+    max_id = 0
+    if not os.path.exists(SEANCES_USER_CSV_FILE): return 1
+    try:
+        # NOTE: Utilisation de utf-8-sig pour la lecture
+        with open(SEANCES_USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                try:
+                    user_id = int(row['id_seance_user'])
+                    if user_id > max_id: max_id = user_id
+                except (ValueError, TypeError): continue 
+        return max_id + 1
+    except Exception: return 1
+# ----------------------------------
+
 def does_user_exist(username, email):
     """Vérifie si le pseudo ou l'email existent déjà."""
     if not os.path.exists(USER_CSV_FILE): return False
     try:
-        # --- CORRECTION ENCODAGE (Lecture) ---
         with open(USER_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f, delimiter=';')
             for row in reader:
@@ -71,12 +85,33 @@ def does_user_exist(username, email):
                     return True
         return False
     except Exception: return False
+    
+def get_default_workouts(objectif, nombre):
+    """Récupère les N premiers entraînements pour un objectif depuis Entrainement.csv"""
+    workouts = []
+    if not os.path.exists(ENTRAINEMENT_CSV_FILE):
+        messagebox.showerror("Erreur Fichier", "Fichier Entrainement.csv introuvable.")
+        return []
+        
+    try:
+        # NOTE: Utilisation de utf-8-sig pour la lecture
+        with open(ENTRAINEMENT_CSV_FILE, mode='r', newline='', encoding='utf-8-sig') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                if row.get('type_entrainement', '').strip().lower() == objectif.lower():
+                    workouts.append(row)
+                    if len(workouts) >= nombre:
+                        break # Arrête dès qu'on a le bon nombre
+        return workouts
+    except Exception as e:
+        messagebox.showerror("Erreur Lecture", f"Erreur lecture Entrainement.csv: {e}")
+        return []
 
 # --- INTERFACE PRINCIPALE ---
 
 def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin_callback):
     
-    # ... (Le reste de la fonction est inchangé) ...
+    # ... (Le début de la fonction run_connection_initial reste inchangé) ...
     
     # ------------------ PRÉPARATION DE LA FENÊTRE ------------------
     for widget in root_window.winfo_children():
@@ -164,7 +199,7 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
         reg.resizable(False, False)
         reg.configure(bg=BG_COLOR)
 
-        # ---- Container avec Canvas + Scrollbar ----
+        # ... (Logique du Canvas/Scrollbar) ...
         container = tk.Frame(reg, bg=BG_COLOR)
         container.pack(fill="both", expand=True)
         canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -206,18 +241,20 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
             if not all(data[f] for f in required_fields):
                 messagebox.showerror("Champs requis", "Nom, Prénom, Pseudo, Email et Mot de passe sont requis.", parent=reg)
                 return
-                
             if '@' not in data['email'] or '.' not in data['email']:
                  messagebox.showerror("Email invalide", "Veuillez entrer une adresse email valide.", parent=reg)
                  return
-                 
             if does_user_exist(data['username'], data['email']):
                 messagebox.showerror("Erreur", "Ce nom d'utilisateur ou cet email est déjà utilisé.", parent=reg)
                 return
 
             try:
+                # 1. Création de l'utilisateur
                 new_id = get_next_user_id()
+                nb_seances_default = 3
+                objectif_default = "Force"
                 
+                # Ligne pour User.csv
                 new_row = [
                     new_id,
                     data['username'], data['nom'], data['prenom'], 
@@ -226,15 +263,24 @@ def run_connection_initial(root_window, switch_to_menu_callback, switch_to_admin
                     data['taille'] if data['taille'] else '',
                     data['mdp'], 
                     data['email'], 
-                    'False', '','4', 'Force'
+                    'False', '', nb_seances_default, objectif_default
                 ]
-
-                # --- CORRECTION ENCODAGE (Écriture) ---
                 with open(USER_CSV_FILE, mode='a', newline='', encoding='utf-8') as f:
                     csv_writer = csv.writer(f, delimiter=';')
                     csv_writer.writerow(new_row)
                     
-                messagebox.showinfo("Succès", "Compte créé! Veuillez vous connecter.", parent=reg)
+                # 2. Créer les séances par défaut dans Seances_Utilisateur.csv
+                default_workouts = get_default_workouts(objectif_default, nb_seances_default)
+                seance_id = get_next_seance_user_id()
+                
+                # NOTE: Utilisation de utf-8-sig pour la création de séances
+                with open(SEANCES_USER_CSV_FILE, mode='a', newline='', encoding='utf-8-sig') as f:
+                    csv_writer = csv.writer(f, delimiter=';')
+                    for workout in default_workouts:
+                        csv_writer.writerow([seance_id, new_id, workout['id_entrainement']])
+                        seance_id += 1
+                        
+                messagebox.showinfo("Succès", "Compte créé! Un plan 'Force 3 Jours' a été ajouté par défaut.", parent=reg)
                 reg.destroy()
 
             except Exception as e:

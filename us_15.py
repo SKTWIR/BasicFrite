@@ -134,7 +134,7 @@ def run_planning_screen(root_window, switch_to_menu_callback, user_data):
 
     tk.Label(main_frame, text="Planification Hebdomadaire & Objectifs", font=("Arial", 16, "bold")).pack(pady=(0, 20))
 
-    tk.Label(main_frame, text="1. Nombre de séances par semaine (0-7) :", anchor="w").pack(fill="x", pady=(10, 5))
+    tk.Label(main_frame, text="1. Nombre de séances par semaine (0-6) :", anchor="w").pack(fill="x", pady=(10, 5))
     entry_seances = tk.Entry(main_frame, width=5, font=("Arial", 12))
     entry_seances.insert(0, current_nb_seances) 
     entry_seances.pack(pady=5)

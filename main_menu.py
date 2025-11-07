@@ -1,4 +1,4 @@
-# Fichier : main_menu.py (Fusionné et Corrigé)
+# Fichier : main_menu.py (Mis à jour pour appeler l'éditeur de séances)
 
 import tkinter as tk
 from tkinter import messagebox
@@ -6,89 +6,72 @@ import sys
 import os 
 import csv 
 
+# ... (Imports NOTIFICATIONS, add_notification, Thème...) ...
+NOTIFICATIONS = []
+def add_notification(title: str, message: str):
+    NOTIFICATIONS.append({"title": title, "message": message})
+
 # Import des autres écrans
 import connection_initial
 import us_15
 import us_31
 import app_gui
-import us_39 # Module de gestion Admin
-import us_28 # Module de motivation
-import US_11_9 # Module de recherche d'exercices
-import US_35_AjoutNouvelExo # Module d'ajout d'exercices
+import us_39 
+import us_28 
+import US_11_9
+import US_35_AjoutNouvelExo 
+import us_seances_editor # <-- NOUVEL IMPORT
 
-# Notifications générales stockées en mémoire (simulation de base de données)
-NOTIFICATIONS = []
-
-def add_notification(title: str, message: str):
-    """Ajoute une notification dans la liste globale (simulé)."""
-    NOTIFICATIONS.append({"title": title, "message": message})
-
-# --- Thème clair / sombre (US 27) ---
-IS_DARK_MODE = False  # False = clair, True = sombre
-
+# ... (Constantes CSV, Variable Globale, Fonctions Thème...) ...
+USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
+ENTRAINEMENT_CSV_FILE = os.path.join(os.path.dirname(__file__), 'Entrainement.csv') 
+current_user_data = None
+IS_DARK_MODE = False
 def get_theme_colors():
-    """
-    Retourne un dictionnaire avec les couleurs du thème actuel.
-    """
     if IS_DARK_MODE:
         return {
-            "BG_COLOR": "#2C3E50",   # Fond sombre
-            "FRAME_BG": "#34495E",  # Cadre plus clair
-            "BUTTON_BG": "#5D6D7E",  # Boutons gris/bleu
-            "BUTTON_FG": "#FFFFFF",  # Texte des boutons blanc
-            "TEXT_COLOR": "#ECF0F1"  # Texte principal clair
+            "BG_COLOR": "#2C3E50", "FRAME_BG": "#34495E", "BUTTON_BG": "#5D6D7E",
+            "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#ECF0F1"
         }
     else:
         return {
-            "BG_COLOR": "#ECF0F1",   # Fond gris clair (défaut)
-            "FRAME_BG": "#FFFFFF",   # Cadre blanc
-            "BUTTON_BG": "#2980B9",   # Bleu (défaut)
-            "BUTTON_FG": "#FFFFFF",   # Texte des boutons blanc
-            "TEXT_COLOR": "#17202A"   # Texte principal foncé
+            "BG_COLOR": "#ECF0F1", "FRAME_BG": "#FFFFFF", "BUTTON_BG": "#2980B9",
+            "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#17202A"
         }
-
 def toggle_theme():
-    """
-    Inverse le thème (clair/sombre) et recharge le menu principal.
-    """
     global IS_DARK_MODE
     IS_DARK_MODE = not IS_DARK_MODE
-
-    # Recharge le menu actuel (utilisateur ou admin) pour appliquer le thème
     if current_user_data:
         if current_user_data.get('is_admin', 'False').lower() == 'true':
             run_admin_menu()
         else:
             switch_to_menu(current_user_data)
     else:
-        # Si personne n'est connecté (ne devrait pas arriver ici, mais par sécurité)
         switch_to_login()
 
-
-# --- CONSTANTE CSV ---
-USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
-
-# --- Variable Globale pour stocker l'utilisateur connecté ---
-current_user_data = None
 
 # --- Fonctions d'Action/Simulations ---
 
 def show_user_info():
     messagebox.showinfo("Info", "Utilisez 'Mon Profil' pour voir vos informations.")
 
+# --- FONCTION 'VOIR MES SÉANCES' (REMPLACÉE) ---
 def view_sessions():
-    messagebox.showinfo(
-        "📅 Mes Séances",
-        "Séances de la semaine :\nLundi: Upper\nMercredi: Lower\nVendredi: Full Body"
-    )
+    """
+    Lance l'éditeur de séances (us_seances_editor.py).
+    """
+    global current_user_data
+    if not current_user_data:
+        messagebox.showerror("Erreur", "Aucun utilisateur connecté.")
+        return
+    
+    # Appelle le nouvel écran d'édition
+    us_seances_editor.run_seances_editor_screen(root, switch_to_menu, current_user_data)
+
 
 # --- FONCTION DE SUPPRESSION (Version CSV fonctionnelle) ---
-
 def delete_account():
-    """
-    Supprime le compte de l'utilisateur connecté (current_user_data) 
-    du fichier User.csv.
-    """
+    # ... (La fonction delete_account reste inchangée) ...
     global current_user_data
     if not current_user_data:
         messagebox.showerror("Erreur", "Aucun utilisateur connecté, suppression impossible.")
@@ -131,32 +114,26 @@ def delete_account():
 
 
 # --- NOUVELLE FONCTIONNALITÉ : Chat utilisateur (Notifications) ---
-
 def open_chat_window():
-    """Affiche les notifications envoyées par l'administrateur (Chat simple)."""
+    # ... (La fonction open_chat_window reste inchangée) ...
     chat = tk.Toplevel(root)
     chat.title("💬 Chat - Notifications")
     chat.geometry("450x400")
-
     theme = get_theme_colors()
     BG_COLOR = theme["BG_COLOR"]
     TEXT_COLOR = theme["TEXT_COLOR"]
     CARD_BG = theme["FRAME_BG"]
-
     chat.configure(bg=BG_COLOR)
-
     tk.Label(
         chat, text="💬 Messages de l'administrateur", font=("Arial", 14, "bold"),
         bg=BG_COLOR, fg=TEXT_COLOR
     ).pack(pady=10)
-
     if not NOTIFICATIONS:
         tk.Label(
             chat, text="Aucune notification pour le moment.", font=("Arial", 11),
             bg=BG_COLOR, fg=TEXT_COLOR
         ).pack(pady=20)
         return
-
     container = tk.Frame(chat, bg=BG_COLOR)
     container.pack(fill="both", expand=True, padx=10, pady=10)
     canvas = tk.Canvas(container, bg=BG_COLOR, highlightthickness=0)
@@ -183,14 +160,12 @@ def open_chat_window():
 
 
 # --- NOUVELLE FONCTIONNALITÉ : Fenêtre Admin pour envoyer une notification ---
-
 def open_admin_notification_window():
-    """Fenêtre pour que l'administrateur envoie une notification générale (USER STORY 40)."""
+    # ... (La fonction open_admin_notification_window reste inchangée) ...
     theme = get_theme_colors()
     BG_COLOR = theme["BG_COLOR"]
     BTN_PRIMARY = theme["BUTTON_BG"]
-    BTN_PRIMARY_ACTIVE = "#1F618D" # Gardé foncé pour le clic
-    
+    BTN_PRIMARY_ACTIVE = "#1F618D"
     win = tk.Toplevel(root)
     win.title("📢 Envoyer une notification")
     win.geometry("500x380")
@@ -232,10 +207,7 @@ def open_admin_notification_window():
 # --- Fonctions de Navigation ---
 
 def switch_to_login(force_logout=False):
-    """
-    Déconnexion : Ferme le menu et affiche l'écran de connexion/initial.
-    Si force_logout est True, saute la confirmation.
-    """
+    # ... (La fonction switch_to_login reste inchangée) ...
     global current_user_data
     current_user_data = None 
     if not ('root' in globals() and root.winfo_exists()):
@@ -275,10 +247,7 @@ def switch_to_menu(user_data):
     current_user_data = user_data 
     user_first_name = current_user_data.get('prénom', 'sportif')
     
-    # --- CORRECTION DE LA HAUTEUR DE LA FENÊTRE ---
-    root.geometry("450x620") # Augmenté pour le bouton Thème
-    # --- FIN CORRECTION ---
-    
+    root.geometry("450x620") 
     root.resizable(False, False)
 
     for widget in root.winfo_children():
@@ -296,7 +265,7 @@ def switch_to_menu(user_data):
 
     tk.Label(
         root, text="💪 Menu Principal", font=("Arial", 20, "bold"),
-        bg=BG_COLOR, fg=TEXT_COLOR # Titre s'adapte au thème
+        bg=BG_COLOR, fg=TEXT_COLOR
     ).pack(pady=20)
 
     button_frame = tk.Frame(root, bg=BG_COLOR)
@@ -305,7 +274,7 @@ def switch_to_menu(user_data):
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
         ("ℹ️ Mon Profil", switch_to_profile), 
-        ("📅 Voir Mes Séances", view_sessions),
+        ("📅 Voir Mes Séances", view_sessions), # <-- APPELLE L'ÉDITEUR
         ("🗓️ Modifier Jours/Semaine", switch_to_planning),
         ("🔍 Recherche Exercice", switch_to_exercise_search), 
     ]
@@ -318,7 +287,6 @@ def switch_to_menu(user_data):
         )
         btn.pack(pady=8)
         
-    # --- BOUTON MOTIVATION (déjà présent) ---
     btn_motivation = tk.Button(
         button_frame, 
         text="🔥 Message de motivation",
@@ -334,7 +302,6 @@ def switch_to_menu(user_data):
     )
     btn_motivation.pack(pady=8)
     
-    # --- AJOUT DU BOUTON THÈME (fusionné) ---
     tk.Button(
         button_frame,
         text="🎨 Thème clair / sombre",
@@ -349,7 +316,6 @@ def switch_to_menu(user_data):
         activebackground="#1F618D"
     ).pack(pady=8)
 
-    # Bouton Supprimer le compte (fonctionnel)
     tk.Button(button_frame, 
               text="🗑️ Supprimer mon compte", 
               command=delete_account, 
@@ -360,7 +326,6 @@ def switch_to_menu(user_data):
               height=1,
               relief="flat").pack(pady=8)
     
-    # Bouton Défi Finisher
     challenge_button = tk.Button(
         root, text="⚡ Défi Finisher ⚡", font=("Arial", 12, "bold"),
         command=lambda: us_31.show_random_challenge(root),
@@ -368,13 +333,11 @@ def switch_to_menu(user_data):
     )
     challenge_button.pack(pady=10)
 
-    # Bouton Chat (notifications de l'admin)
     tk.Button(
         root, text="💬 Chat", command=open_chat_window,
         font=("Arial", 10, "bold"), bg="#3498DB", fg="#FFFFFF", relief="flat"
     ).pack(pady=5)
 
-    # Bouton Déconnexion
     tk.Button(
         root, text="🚪 Déconnexion", command=switch_to_login,
         font=("Arial", 10), bg="#E74C3C", fg="#FFFFFF", relief="flat"
@@ -383,31 +346,24 @@ def switch_to_menu(user_data):
 
 def run_admin_menu():
     """Crée et affiche l'interface Administrateur."""
+    # ... (La fonction run_admin_menu reste inchangée) ...
     for widget in root.winfo_children():
         widget.destroy()
-
-    # --- Thème Admin (fusionné) ---
     theme = get_theme_colors()
     BG_COLOR = theme["BG_COLOR"]
-    BUTTON_BG = "#5D6D7E" # Garde la couleur Admin
+    BUTTON_BG = "#5D6D7E"
     BUTTON_FG = "#FFFFFF"
     FONT_BUTTON = ("Arial", 12, "bold")
     TEXT_COLOR = theme["TEXT_COLOR"]
-
-    # --- CORRECTION HAUTEUR ADMIN ---
-    root.geometry("450x500") # Augmenté pour 6 boutons
+    root.geometry("450x500") 
     root.title("⚙️ Menu Administrateur")
     root.configure(bg=BG_COLOR)
-
     tk.Label(
         root, text="🔑 Menu Administrateur", font=("Arial", 20, "bold"),
         bg=BG_COLOR, fg=TEXT_COLOR
     ).pack(pady=20)
-
     button_frame = tk.Frame(root, bg=BG_COLOR)
     button_frame.pack(pady=10)
-
-    # --- LISTE DES BOUTONS ADMIN FUSIONNÉE ---
     boutons_admin = [
         ("👥 Gérer Utilisateurs",
          lambda: us_39.run_user_management(root, run_admin_menu)),
@@ -421,8 +377,6 @@ def run_admin_menu():
         ("🔗 Outil #5 (vide)",
          lambda: messagebox.showinfo("Admin", "Fonctionnalité Outil #5 (vide)")),
     ]
-    # --- FIN FUSION ---
-
     for text, command in boutons_admin:
         btn = tk.Button(
             button_frame, text=text, command=command, font=FONT_BUTTON,
@@ -430,7 +384,6 @@ def run_admin_menu():
             relief="flat", bd=0, activebackground="#4A5867"
         )
         btn.pack(pady=8)
-        
     tk.Button(root, text="< Retour Menu Utilisateur", 
                command=lambda: switch_to_menu(current_user_data), 
                font=("Arial", 10),
