@@ -20,50 +20,34 @@ import us_31
 import app_gui
 import us_39 # Module de gestion Admin
 import us_28 # Module de motivation
-import US_11_9 # Module de recherche d'exercices
+import US_11_9 # Module de Recherche Exercice
 import US_35_AjoutNouvelExo # Module d'ajout d'exercices
-import US_21_Export_Entrainement
+import US_21_Export_Entrainement # <-- FUSIONNÉ
 import us_journal # Le journal (ancien us_20)
 
-# --- Thème clair / sombre (US 27) ---
-IS_DARK_MODE = False  # False = clair, True = sombre
-
+# --- Thème (Fonctions inchangées) ---
+IS_DARK_MODE = False
 def get_theme_colors():
-    """
-    Retourne un dictionnaire avec les couleurs du thème actuel.
-    """
     if IS_DARK_MODE:
         return {
-            "BG_COLOR": "#2C3E50",   # Fond sombre
-            "FRAME_BG": "#34495E",  # Cadre plus clair
-            "BUTTON_BG": "#5D6D7E",  # Boutons gris/bleu
-            "BUTTON_FG": "#FFFFFF",  # Texte des boutons blanc
-            "TEXT_COLOR": "#ECF0F1"  # Texte principal clair
+            "BG_COLOR": "#2C3E50", "FRAME_BG": "#34495E", "BUTTON_BG": "#5D6D7E",
+            "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#ECF0F1"
         }
     else:
         return {
-            "BG_COLOR": "#ECF0F1",   # Fond gris clair (défaut)
-            "FRAME_BG": "#FFFFFF",   # Cadre blanc
-            "BUTTON_BG": "#2980B9",   # Bleu (défaut)
-            "BUTTON_FG": "#FFFFFF",   # Texte des boutons blanc
-            "TEXT_COLOR": "#17202A"   # Texte principal foncé
+            "BG_COLOR": "#ECF0F1", "FRAME_BG": "#FFFFFF", "BUTTON_BG": "#2980B9",
+            "BUTTON_FG": "#FFFFFF", "TEXT_COLOR": "#17202A"
         }
 
 def toggle_theme():
-    """
-    Inverse le thème (clair/sombre) et recharge le menu principal.
-    """
     global IS_DARK_MODE
     IS_DARK_MODE = not IS_DARK_MODE
-
-    # Recharge le menu actuel (utilisateur ou admin) pour appliquer le thème
     if current_user_data:
         if current_user_data.get('is_admin', 'False').lower() == 'true':
             run_admin_menu()
         else:
             switch_to_menu(current_user_data)
     else:
-        # Si personne n'est connecté (ne devrait pas arriver ici, mais par sécurité)
         switch_to_login()
 
 
@@ -73,10 +57,10 @@ USER_CSV_FILE = os.path.join(os.path.dirname(__file__), 'User.csv')
 # --- Variable Globale pour stocker l'utilisateur connecté ---
 current_user_data = None
 
-# --- Variable pour stocker l'ID utilisateur connecté ---
-USER_ID = None  # Sera mis à jour automatiquement après connexion
+# --- Variable pour stocker l'ID utilisateur connecté (pour US_21) ---
+USER_ID = None  
 
-# --- Fonction utilitaire pour récupérer l'id_user (CORRIGÉE) ---
+# --- Fonction utilitaire (CORRIGÉE) ---
 def get_user_id_by_pseudo(pseudo):
     """Récupère l'ID utilisateur en gérant l'encodage BOM."""
     try:
@@ -96,18 +80,12 @@ def get_user_id_by_pseudo(pseudo):
 def show_user_info():
     messagebox.showinfo("Info", "Utilisez 'Mon Profil' pour voir vos informations.")
 
-# --- FONCTION 'VOIR MES SÉANCES' (remplacée par launch_training_journal) ---
 def launch_training_journal():
-    """
-    Lance l'interface du Journal d'Entraînement (us_journal.py) 
-    pour loguer ou voir les séries passées.
-    """
+    """Lance l'interface du Journal d'Entraînement (us_journal.py)"""
     global current_user_data
     if not current_user_data:
         messagebox.showerror("Erreur", "Aucun utilisateur connecté.")
         return
-    
-    # Appel du Journal d'Entraînement
     us_journal.run_training_journal(root, switch_to_menu, current_user_data)
 
 
@@ -283,6 +261,7 @@ def switch_to_exercise_search():
     """Lance l'écran de recherche d'exercices (US_11_9)."""
     US_11_9.run_exercise_search_screen(root, lambda: switch_to_menu(current_user_data))
 
+# --- NOUVELLE FONCTION DE NAVIGATION (fusionnée) ---
 def switch_to_export_entrainement():
     """Lance l'écran d'export d'entraînement (US_21_Export_Entrainement)."""
     # CORRECTION : Utilise un lambda pour passer current_user_data au retour
@@ -337,8 +316,8 @@ def switch_to_menu(user_data):
     # Boutons de Fonctionnalités Utilisateur (mis à jour)
     boutons = [
         ("ℹ️ Mon Profil", switch_to_profile), 
-        ("📅 VOIR/LOGUER SÉANCES", launch_training_journal), # <-- MODIFIÉ
-        ("🗓️ Modifier Jours/Semaine", switch_to_planning),
+        ("📅 Voir mes séances", launch_training_journal), 
+        ("🗓️ Jours/Semaine et objectif", switch_to_planning),
         ("🔍 Recherche Exercice", switch_to_exercise_search), 
         ("⬇️ Export Entrainement", switch_to_export_entrainement), # <-- AJOUTÉ
     ]

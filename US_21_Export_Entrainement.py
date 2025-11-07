@@ -22,9 +22,9 @@ def load_user_entrainements(user_id):
             for row in reader:
                 if row.get('id_user') == str(user_id):
                     data.append(row)
-    except Exception as e:
-        # Fallback (au cas où, mais utf-8-sig devrait suffire)
+    except Exception as e_utf8:
         try:
+            # Fallback (au cas où, mais utf-8-sig devrait suffire)
             with open(CSV_FILE, newline='', encoding='latin-1') as f:
                 reader = csv.DictReader(f, delimiter=';')
                 for row in reader:
@@ -50,6 +50,7 @@ def run_export_entrainement_screen(root_window, switch_back_callback, user_id):
     else:
         columns = ["Aucune donnée"]
         messagebox.showinfo("Export", "Vous n'avez encore logué aucune série à exporter.")
+
 
     frame_table = tk.Frame(root_window)
     frame_table.pack(fill="both", expand=True, padx=12, pady=6)
@@ -92,5 +93,5 @@ def run_export_entrainement_screen(root_window, switch_back_callback, user_id):
     bottom_frame.pack(side="bottom", fill="x", pady=10)
     tk.Button(bottom_frame, text="⬇️ Générer mon récap (CSV)", command=export_csv, bg="#2980B9", fg="white", font=("Arial", 12, "bold")).pack(side="left", padx=20)
     
-    # CORRECTION : Le callback est maintenant un lambda (corrigé dans main_menu.py)
+    # Le switch_back_callback est maintenant un lambda: switch_to_menu(current_user_data)
     tk.Button(bottom_frame, text="⬅️ Retour Menu", command=switch_back_callback).pack(side="right", padx=20)
